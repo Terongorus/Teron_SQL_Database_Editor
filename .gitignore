@@ -1,0 +1,21 @@
+# Build output
+/bin/
+/obj/
+
+# Visual Studio
+/.vs/
+*.user
+*.suo
+
+# VS Code
+/.vscode/*
+!/.vscode/tasks.json
+!/.vscode/launch.json
+/.vscode/dotnet-studio.state.json
+
+# Publish output / installer artifacts
+/publish/
+/bin/InstallerPackage/
+
+# Publish profiles are desktop self-contained profiles with no secrets - keep them tracked
+!Properties/PublishProfiles/*.pubxml

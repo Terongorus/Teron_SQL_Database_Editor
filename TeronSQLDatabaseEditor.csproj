@@ -1,0 +1,135 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ProjectGuid>{D5C8704C-7C03-4DE3-B40F-36E333B8EB6A}</ProjectGuid>
+    <RootNamespace>TeronSQLDatabaseEditor</RootNamespace>
+    <AssemblyName>TeronSQLDatabaseEditor</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <OutputType>WinExe</OutputType>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>Teron SQL Database Editor (TSDE)</Product>
+    <AssemblyTitle>TeronSQLDatabaseEditor</AssemblyTitle>
+    <Description>A powerful database editing tool. Works with any SQL database.</Description>
+    <Company>Terongorus</Company>
+    <Copyright>Copyright © 2026 Terongorus</Copyright>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <MajorMinorPatchVersion>2.0.0</MajorMinorPatchVersion>
+    <BuildNumberFile>$(MSBuildProjectDirectory)\BuildNumber.txt</BuildNumberFile>
+  </PropertyGroup>
+
+  <Target Name="IncrementBuildNumber" BeforeTargets="BeforeBuild">
+    <ReadLinesFromFile File="$(BuildNumberFile)" Condition="Exists('$(BuildNumberFile)')">
+      <Output TaskParameter="Lines" ItemName="_BuildNumberLine" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_PreviousBuildNumber Condition="'@(_BuildNumberLine)' != ''">@(_BuildNumberLine)</_PreviousBuildNumber>
+      <_PreviousBuildNumber Condition="'$(_PreviousBuildNumber)' == ''">0</_PreviousBuildNumber>
+      <BuildNumber>$([MSBuild]::Add($(_PreviousBuildNumber), 1))</BuildNumber>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(BuildNumberFile)" Lines="$(BuildNumber)" Overwrite="true" />
+    <PropertyGroup>
+      <AssemblyVersion>$(MajorMinorPatchVersion).$(BuildNumber)</AssemblyVersion>
+      <FileVersion>$(MajorMinorPatchVersion).$(BuildNumber)</FileVersion>
+      <Version>$(MajorMinorPatchVersion).$(BuildNumber)</Version>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="BuildInstaller" AfterTargets="Publish">
+    <PropertyGroup>
+      <_InstallerArch Condition="'$(RuntimeIdentifier)' == 'win-x64'">x64</_InstallerArch>
+      <_InstallerArch Condition="'$(RuntimeIdentifier)' == 'win-x86'">x86</_InstallerArch>
+      <_ISCCPath Condition="Exists('C:\Program Files (x86)\Inno Setup 6\ISCC.exe')">C:\Program Files (x86)\Inno Setup 6\ISCC.exe</_ISCCPath>
+      <_ISCCPath Condition="'$(_ISCCPath)' == '' AND Exists('C:\Program Files\Inno Setup 6\ISCC.exe')">C:\Program Files\Inno Setup 6\ISCC.exe</_ISCCPath>
+    </PropertyGroup>
+
+    <Warning Condition="'$(_InstallerArch)' == ''" Text="Skipping installer packaging: unrecognized RuntimeIdentifier '$(RuntimeIdentifier)'." />
+    <Warning Condition="'$(_InstallerArch)' != '' AND '$(_ISCCPath)' == ''" Text="Skipping installer packaging: Inno Setup (ISCC.exe) not found. Install it from https://jrsoftware.org/isinfo.php to enable automatic installer creation." />
+
+    <Exec Command="&quot;$(_ISCCPath)&quot; /DMyAppVersion=$(FileVersion) /DMyAppArch=$(_InstallerArch) /DPublishDir=$(PublishDir) &quot;$(MSBuildProjectDirectory)\Installer\Setup.iss&quot;"
+          Condition="'$(_InstallerArch)' != '' AND '$(_ISCCPath)' != ''" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Core" Version="1.53.0" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.83.3" />
+    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.83.3" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.17.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Services\AppInfo.cs" />
+    <Compile Include="Services\Globals.cs" />
+    <Compile Include="Services\HelperFunctions.cs" />
+    <Compile Include="Services\DataRequest.cs" />
+    <Compile Include="Services\ExportQueryResults.cs" />
+    <Compile Include="Services\App.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\Startup.cs" />
+    <Compile Include="Forms\Startup.Designer.cs">
+      <DependentUpon>Startup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\AppForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\AppForm.Designer.cs">
+      <DependentUpon>AppForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\AppDelete.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\AppDelete.Designer.cs">
+      <DependentUpon>AppDelete.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\AppLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\AppLogin.Designer.cs">
+      <DependentUpon>AppLogin.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\DBCEditor.cs" />
+    <Compile Include="Forms\DBCEditor.Designer.cs">
+      <DependentUpon>DBCEditor.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Forms\AppDelete.resx">
+      <DependentUpon>AppDelete.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\AppForm.resx">
+      <DependentUpon>AppForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\AppLogin.resx">
+      <DependentUpon>AppLogin.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\DBCEditor.resx">
+      <DependentUpon>DBCEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Startup.resx">
+      <DependentUpon>Startup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+	<Content Include="Resources\Definitions\*.*" CopyToOutputDirectory="PreserveNewest" />
+	<Content Include="Resources\Icons\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
