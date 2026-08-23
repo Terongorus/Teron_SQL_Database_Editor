@@ -2,6 +2,8 @@
 
 A powerful database editing tool. Works with any SQL database.
 
+Repository: [github.com/Terongorus/Teron_SQL_Database_Editor](https://github.com/Terongorus/Teron_SQL_Database_Editor)
+
 ## Features
 
 - Connect to and browse multiple database connections (schemas, tables, columns) in a tree view
@@ -17,6 +19,8 @@ A powerful database editing tool. Works with any SQL database.
 ## Building from source
 
 ```sh
+git clone https://github.com/Terongorus/Teron_SQL_Database_Editor.git
+cd Teron_SQL_Database_Editor
 dotnet build TeronSQLDatabaseEditor.slnx -c Release
 ```
 

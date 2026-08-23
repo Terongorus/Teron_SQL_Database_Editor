@@ -9,12 +9,12 @@ into compliance" is not itself authorization to cut a release.
 
 Additional blockers specific to this project, beyond the general LAUNCH gate:
 
-- **No GitHub remote exists yet.** LAUNCH assumes a repo already published to
-  `github.com/Terongorus/...`; this project has never been pushed anywhere. Creating that
-  remote and pushing are their own separate, visible-to-others actions.
-- **No license file** - deferred per explicit instruction (Phase 3). Worth resolving before any
-  public release.
+- ~~No GitHub remote exists yet~~ - **resolved in Phase 11**: `Terongorus/Teron_SQL_Database_Editor`
+  now exists (public), `release`+`dev` both pushed, `release` set as the default branch.
+- ~~No license file~~ - **resolved in Phase 10**: GPL-3.0 `LICENSE.txt` added.
 - **Installer not end-to-end verified** - Inno Setup isn't installed on this machine (Phase 7);
-  the packaging step has only been verified up to its graceful-skip warning path.
+  the packaging step has only been verified up to its graceful-skip warning path. Still open.
 
-See the session's closing summary for the full list of open items and questions for the user.
+With the GitHub-remote and license blockers cleared, the only things standing between this
+project and an actual LAUNCH are: the user's own explicit go-ahead (never implied by DOCTRINE
+alone) and end-to-end installer verification once Inno Setup is available.
