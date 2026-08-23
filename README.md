@@ -23,6 +23,11 @@ dotnet build TeronSQLDatabaseEditor.slnx -c Release
 ## Data storage
 
 Saved connections (`loginconfig.xml`) and crash logs (`error.log`) live under
-`%LocalAppData%\TeronSQLDatabaseEditor\`.
+`%LocalAppData%\TeronSQLDatabaseEditor\`. Saved passwords are encrypted at rest (Windows DPAPI,
+current-user scope).
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## License
+
+GPL-3.0 - see [LICENSE.txt](LICENSE.txt).

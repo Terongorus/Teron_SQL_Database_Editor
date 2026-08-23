@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Forms;
 using System.Xml.Linq;
 using AzureEditor;
@@ -10,6 +12,29 @@ namespace Logic
 {
     internal class App
     {
+        // DPAPI-protects the password before it's written to disk. CurrentUser scope means
+        // only the Windows account that saved it can read it back.
+        private static string ProtectPassword(string plainText)
+        {
+            byte[] encrypted = ProtectedData.Protect(Encoding.UTF8.GetBytes(plainText), null, DataProtectionScope.CurrentUser);
+            return Convert.ToBase64String(encrypted);
+        }
+
+        private static string UnprotectPassword(string storedValue)
+        {
+            try
+            {
+                byte[] decrypted = ProtectedData.Unprotect(Convert.FromBase64String(storedValue), null, DataProtectionScope.CurrentUser);
+                return Encoding.UTF8.GetString(decrypted);
+            }
+            catch (Exception ex) when (ex is FormatException or CryptographicException)
+            {
+                // Not a value this app protected (e.g. a plaintext loginconfig.xml carried over
+                // from an older version) - treat it as already-plaintext rather than failing.
+                return storedValue;
+            }
+        }
+
         public static void AuthenticateUser(AppForm self, AppLogin login)
         {
             Globals.login_list.Clear();
@@ -84,7 +109,7 @@ namespace Logic
                     new XAttribute("ID", new_ID),
                     new XElement("Nickname", login_entry.Nickname),
                     new XElement("Username", login_entry.Username),
-                    new XElement("Password", login_entry.Password),
+                    new XElement("Password", ProtectPassword(login_entry.Password)),
                     new XElement("ConnString", login_entry.ConnectionString)
                 );
                 root.Add(new_connection);
@@ -119,7 +144,7 @@ namespace Logic
                     {
                         Nickname = element.Element("Nickname")?.Value,
                         Username = element.Element("Username")?.Value ?? "",
-                        Password = element.Element("Password")?.Value ?? "",
+                        Password = UnprotectPassword(element.Element("Password")?.Value ?? ""),
                         ConnectionString = element.Element("ConnString")?.Value ?? ""
                     };
                     Globals.login_list.Add(load_login);

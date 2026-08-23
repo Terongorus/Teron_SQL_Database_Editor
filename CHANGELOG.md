@@ -28,7 +28,15 @@ Versions follow major.minor.hotfix (e.g. 1.2.3).
 - Single-instance guard: launching a second copy now shows a notice and exits instead of
   running two instances side by side.
 - Auto-incrementing 4th build-number version component, tracked via `BuildNumber.txt`.
+- Licensed under GPL-3.0 (see `LICENSE.txt`).
+
+### Security
+- Saved connection passwords are now encrypted at rest (Windows DPAPI, current-user scope)
+  before being written to `loginconfig.xml`, instead of stored as plain text. An existing
+  plaintext `loginconfig.xml` carried over from an older version still loads correctly.
 
 ### Fixed
 - Adding the very first saved connection no longer crashes with a missing-file error (the old
   code always tried to load `loginconfig.xml` before checking whether it existed yet).
+- Removed two unused fields (`Globals.app_login`, `Globals.app_delete`) that were declared but
+  never assigned or read anywhere, eliminating the corresponding compiler warnings.

@@ -13,8 +13,6 @@ namespace Logic
         //form instances
         public static Form startup = new Startup.Startup(); //initialize a global startup object (Form) which will be a "main menu" for the other Forms, and will be responsible for opening the main AppForm
         public static AppForm? app_form;
-        public static AppLogin? app_login;
-        public static AppDelete? app_delete;
         public static DBCEditor? dbc_editor;
 
         //configurations
