@@ -7,6 +7,8 @@
     <AssemblyName>TeronSQLDatabaseEditor</AssemblyName>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
     <OutputType>WinExe</OutputType>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
@@ -22,7 +24,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <MajorMinorPatchVersion>3.0.0</MajorMinorPatchVersion>
+    <MajorMinorPatchVersion>3.0.1</MajorMinorPatchVersion>
     <BuildNumberFile>$(MSBuildProjectDirectory)\BuildNumber.txt</BuildNumberFile>
   </PropertyGroup>
 

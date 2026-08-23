@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [3.0.1] - 2026-08-24
+
+### Added
+
+- Automatic build-number tracking (4th version component) and a consolidated `Build\` output
+  directory for all build artifacts (regular builds, intermediates, and publish output), matching
+  the rest of this developer's app portfolio.
+
 ## [3.0.0] - 2026-08-23
 
 UI rewrite from Windows Forms to WPF, following this developer's portfolio-wide move away from
