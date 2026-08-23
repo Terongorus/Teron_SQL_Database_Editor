@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls;
 using AzureEditor;
 
 namespace Logic
@@ -30,13 +32,13 @@ namespace Logic
         {
             if (string.IsNullOrEmpty(connString))
             {
-                MessageBox.Show("Connection string is empty or null.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Connection string is empty or null.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
 
             if (!connString.Contains("{technical_user_username}") || !connString.Contains("{technical_user_password}"))
             {
-                MessageBox.Show("Connection string is missing required placeholders: {technical_user_username} or {technical_user_password}.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Connection string is missing required placeholders: {technical_user_username} or {technical_user_password}.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
 
@@ -72,17 +74,24 @@ namespace Logic
 
         public void SetTableDataSource(AppForm self, DataTable? table)
         {
-            self.data_viewer.DataSource = null;
-            self.data_viewer.Refresh();
-            self.data_viewer.DataSource = table;
-            self.data_viewer.Refresh();
+            self.data_viewer.ItemsSource = null;
+            self.data_viewer.Items.Refresh();
+            self.data_viewer.ItemsSource = table?.DefaultView;
+            self.data_viewer.Items.Refresh();
         }
 
-        public async Task SetQuery(AppForm self, RichTextBox current_query_textbox)
+        // Returns the SqlTreeNodeTag attached to the connections_tree_view's currently selected
+        // item, replacing WinForms TreeNode.Level/.Text/.Parent (see Globals.SqlTreeNodeTag).
+        public static SqlTreeNodeTag? GetSelectedNodeTag(AppForm self)
+        {
+            return (self.connections_tree_view.SelectedItem as TreeViewItem)?.Tag as SqlTreeNodeTag;
+        }
+
+        public async Task SetQuery(AppForm self, TextBox current_query_textbox)
         {
             DataRequest request = new DataRequest();
             string? custom_query = null;
-            var node = self.connections_tree_view.SelectedNode;
+            var node = GetSelectedNodeTag(self);
             if (node == null)
                 return;
 
@@ -170,26 +179,27 @@ namespace Logic
 
         public void SetUpdateTimer(AppForm self)
         {
-            if (self.update_timer.Enabled == false)
+            if (self.update_timer.IsEnabled == false)
             {
-                self.update_timer.Enabled = true;
+                self.update_timer.IsEnabled = true;
             }
             else
             {
-                self.update_timer.Interval = 1000;
+                self.update_timer.Interval = TimeSpan.FromMilliseconds(1000);
                 self.update_timer.Start();
             }
         }
 
         public async Task PopulateTreeViewFromDatabase(AppForm self)
         {
-            self.connections_tree_view.Nodes.Clear();
+            self.connections_tree_view.Items.Clear();
             DataRequest request = new DataRequest();
 
             // Iterate through all database connections stored globally
             foreach (var conn in Globals.login_list.ToList())
             {
-                TreeNode dbNode = new TreeNode(conn.Nickname);
+                var dbTag = new SqlTreeNodeTag { Text = conn.Nickname ?? string.Empty, Level = 0 };
+                TreeViewItem dbNode = new TreeViewItem { Header = dbTag.Text, Tag = dbTag };
 
                 // 1️. Fetch schemas using your existing helper
 
@@ -198,7 +208,8 @@ namespace Logic
                 // Loop through all schemas
                 foreach (var schema in local_schema_list)
                 {
-                    TreeNode schemaNode = new TreeNode(schema.Name);
+                    var schemaTag = new SqlTreeNodeTag { Text = schema.Name ?? string.Empty, Level = 1, Parent = dbTag };
+                    TreeViewItem schemaNode = new TreeViewItem { Header = schemaTag.Text, Tag = schemaTag };
 
                     // 2️. Fetch tables for this schema
                     await request.GetTablesInfo(self, conn.Username, conn.Password, conn.ConnectionString, schema.Name);
@@ -206,7 +217,8 @@ namespace Logic
 
                     foreach (var table in local_tables_list)
                     {
-                        TreeNode tableNode = new TreeNode(text: table.Name);
+                        var tableTag = new SqlTreeNodeTag { Text = table.Name ?? string.Empty, Level = 2, Parent = schemaTag };
+                        TreeViewItem tableNode = new TreeViewItem { Header = tableTag.Text, Tag = tableTag };
 
                         // 3️. Fetch columns for this table
                         await request.GetColumnsInfo(self, conn.Username, conn.Password, conn.ConnectionString, schema.Name, table.Name);
@@ -214,160 +226,83 @@ namespace Logic
 
                         foreach (var column in local_colmuns_list)
                         {
-                            TreeNode columnNode = new TreeNode(column.Name);
-                            tableNode.Nodes.Add(columnNode);
+                            var columnTag = new SqlTreeNodeTag { Text = column.Name ?? string.Empty, Level = 3, Parent = tableTag };
+                            TreeViewItem columnNode = new TreeViewItem { Header = columnTag.Text, Tag = columnTag };
+                            tableNode.Items.Add(columnNode);
                         }
 
-                        schemaNode.Nodes.Add(tableNode);
+                        schemaNode.Items.Add(tableNode);
                     }
 
-                    dbNode.Nodes.Add(schemaNode);
+                    dbNode.Items.Add(schemaNode);
                 }
 
-                self.connections_tree_view.Nodes.Add(dbNode);
+                self.connections_tree_view.Items.Add(dbNode);
             }
 
             // Optional: expand tree
-            //self.connections_tree_view.ExpandAll();
+            //foreach (TreeViewItem item in self.connections_tree_view.Items) item.ExpandSubtree();
         }
 
-        public void ExportQuery(AppForm self,RichTextBox richTextBox)
+        public void ExportQuery(AppForm self, TextBox richTextBox)
         {
             try
             {
-                using (SaveFileDialog save_query_dialog = new SaveFileDialog())
-                {
-                    save_query_dialog.Title = "Save SQL Query";
-                    save_query_dialog.FileName = (self.query_tab_control.SelectedTab?.Text.Replace(" ", "_") ?? "query").ToLowerInvariant();
-                    save_query_dialog.Filter = "SQL Files (*.sql)|*.sql|All Files (*.*)|*.*";
-                    save_query_dialog.DefaultExt = "sql";
-                    save_query_dialog.AddExtension = true;
-                    save_query_dialog.InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                var save_query_dialog = new Microsoft.Win32.SaveFileDialog();
+                save_query_dialog.Title = "Save SQL Query";
+                save_query_dialog.FileName = ((self.query_tab_control.SelectedItem as TabItem)?.Tag?.ToString()?.Replace(" ", "_") ?? "query").ToLowerInvariant();
+                save_query_dialog.Filter = "SQL Files (*.sql)|*.sql|All Files (*.*)|*.*";
+                save_query_dialog.DefaultExt = "sql";
+                save_query_dialog.AddExtension = true;
+                save_query_dialog.InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
 
-                    if (save_query_dialog.ShowDialog() == DialogResult.OK)
-                    {
-                        File.WriteAllText(save_query_dialog.FileName, richTextBox.Text.ToString(), Encoding.UTF8);
-                        MessageBox.Show("SQL file exported successfully!", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
+                if (save_query_dialog.ShowDialog() == true)
+                {
+                    File.WriteAllText(save_query_dialog.FileName, richTextBox.Text.ToString(), Encoding.UTF8);
+                    MessageBox.Show("SQL file exported successfully!", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error exporting file:\n{ex.Message}", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error exporting file:\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        public void ImportQuery(RichTextBox richTextBox)
+        public void ImportQuery(TextBox richTextBox)
         {
             try
             {
                 // Create an OpenFileDialog to allow user to select a .sql file
-                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                var openFileDialog = new Microsoft.Win32.OpenFileDialog();
+                openFileDialog.Title = "Import SQL Query";
+                openFileDialog.Filter = "SQL Files (*.sql)|*.sql|All Files (*.*)|*.*";
+                openFileDialog.InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+                // If user selects a file and clicks OK
+                if (openFileDialog.ShowDialog() == true)
                 {
-                    openFileDialog.Title = "Import SQL Query";
-                    openFileDialog.Filter = "SQL Files (*.sql)|*.sql|All Files (*.*)|*.*";
-                    openFileDialog.InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    // Read file contents
+                    string sqlContent = File.ReadAllText(openFileDialog.FileName);
 
-                    // If user selects a file and clicks OK
-                    if (openFileDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        // Read file contents
-                        string sqlContent = File.ReadAllText(openFileDialog.FileName);
+                    // Load content into the TextBox
+                    richTextBox.Text = sqlContent;
 
-                        // Load content into the RichTextBox
-                        richTextBox.Text = sqlContent;
-
-                        MessageBox.Show("SQL file imported successfully!", "Import Complete",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
+                    MessageBox.Show("SQL file imported successfully!", "Import Complete",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error importing file:\n{ex.Message}", "Import Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        public void MouseButtonDetect(object sender, MouseEventArgs e, AppForm self)
-        {
-            if (sender == self.data_viewer)
-            {
-                // Check which button was pressed
-                if (e.Button == MouseButtons.Left)
-                {
-                    return;
-                }
-                else if (e.Button == MouseButtons.Right)
-                {
-                    if (sender is Control source_control)
-                    {
-                        self.query_result_context_menu.Show(source_control, e.Location);
-                    }
-                }
-                else if (e.Button == MouseButtons.Middle)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-            else if (sender == self.connections_tree_view)
-            {
-                // Check which button was pressed
-                if (e.Button == MouseButtons.Left)
-                {
-                    return;
-                }
-                else if (e.Button == MouseButtons.Right)
-                {
-                    if (sender is Control source_control)
-                    {
-                        self.tree_view_context_menu.Show(source_control, e.Location);
-                    }
-                }
-                else if (e.Button == MouseButtons.Middle)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-            else if (sender == self.query_tab_control.TabPages)
-            {
-                // Check which button was pressed
-                if (e.Button == MouseButtons.Left)
-                {
-                    return;
-                }
-                else if (e.Button == MouseButtons.Right)
-                {
-                    //rename tabs
-                    if (sender is Control source_control)
-                    {
-                        self.query_tab_control_context_menu.Show(source_control, e.Location);
-                    }
-                }
-                else if (e.Button == MouseButtons.Middle)
-                {
-                    return;
-                }
-                else
-                {
-                    return;
-                }
-            }
-        }
-
-        public RichTextBox? GetActiveQueryTextBox(AppForm self)
+        public TextBox? GetActiveQueryTextBox(AppForm self)
         {
             if (self == null || self.query_tab_control == null || Globals.box_list == null || self.query_tab_control.SelectedIndex < 0 || self.query_tab_control.SelectedIndex >= Globals.box_list.Count)
             {
@@ -377,40 +312,81 @@ namespace Logic
             return Globals.box_list[self.query_tab_control.SelectedIndex];
         }
 
+        // Reads/writes the plain title string stored in a query TabItem's Tag, and reflects it
+        // in the visible TextBlock inside the tab's Header (a StackPanel with a title + close
+        // button, built in AddNewTab) - WPF TabItem.Header isn't a plain string here the way
+        // WinForms TabPage.Text was, since it also hosts the close button.
+        private static string GetTabTitle(TabItem tab) => tab.Tag as string ?? string.Empty;
+
+        private static void SetTabTitle(TabItem tab, string title)
+        {
+            tab.Tag = title;
+            if (tab.Header is StackPanel panel)
+            {
+                var textBlock = panel.Children.OfType<TextBlock>().FirstOrDefault();
+                if (textBlock != null)
+                    textBlock.Text = title;
+            }
+            // WPF's default TabItem automation name falls back to Header.ToString() when Header
+            // isn't a plain string (it's a StackPanel here, for the close button) - set the real
+            // name explicitly so screen readers/UI Automation see "Query 1", not the object dump.
+            AutomationProperties.SetName(tab, title);
+        }
+
         public string NameQueryTabs(AppForm self)
         {
             int i;
-            for (i = 0; i < self.query_tab_control.TabCount; i++)
+            for (i = 0; i < self.query_tab_control.Items.Count; i++)
             {
-                var tab = self.query_tab_control.TabPages[i]; // access tab directly
+                var tab = (TabItem)self.query_tab_control.Items[i]; // access tab directly
 
-                if (!tab.Text.Contains("Query"))
+                if (!GetTabTitle(tab).Contains("Query"))
                 {
-                    tab.Text = $"Query {i + 1}";
+                    SetTabTitle(tab, $"Query {i + 1}");
                 }
             }
 
             return $"Query {i + 1}";
         }
 
-        public TabPage AddNewTab(AppForm self, TabControl control, string title, Control? content = null)
+        public TabItem AddNewTab(AppForm self, TabControl control, string title, UIElement? content = null)
         {
             int cnt_1 = Globals.box_list.Count;
-            RichTextBox query_textbox = new RichTextBox();
-            query_textbox.Name = $"query_textbox_{cnt_1}";
+            TextBox query_textbox = new TextBox
+            {
+                Name = $"query_textbox_{cnt_1}",
+                AcceptsReturn = true,
+                AcceptsTab = true,
+                TextWrapping = TextWrapping.NoWrap,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                FontFamily = new System.Windows.Media.FontFamily("Consolas")
+            };
             query_textbox.TextChanged += self.query_textbox_TextChanged;
             Globals.box_list.Add(query_textbox);
 
-            content = query_textbox;
+            TabItem new_tab = new TabItem { Tag = title };
 
-            TabPage new_tab = new TabPage(title);
-            if (content != null)
+            var titleBlock = new TextBlock { Text = title, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) };
+            var closeButton = new Button { Content = "x", Width = 16, Height = 16, Padding = new Thickness(0), FontWeight = System.Windows.FontWeights.Bold };
+            closeButton.Click += (s, e) =>
             {
-                content.Dock = DockStyle.Fill;
-                new_tab.Controls.Add(content);
-            }
-            control.TabPages.Add(new_tab);
-            control.SelectedTab = new_tab;
+                int idx = control.Items.IndexOf(new_tab);
+                if (idx < 0) return;
+                if (idx < Globals.box_list.Count)
+                    Globals.box_list.RemoveAt(idx);
+                control.Items.RemoveAt(idx);
+            };
+            var headerPanel = new StackPanel { Orientation = Orientation.Horizontal };
+            headerPanel.Children.Add(titleBlock);
+            headerPanel.Children.Add(closeButton);
+            new_tab.Header = headerPanel;
+            AutomationProperties.SetName(new_tab, title);
+
+            new_tab.Content = query_textbox;
+
+            control.Items.Add(new_tab);
+            control.SelectedItem = new_tab;
 
             return new_tab;
         }

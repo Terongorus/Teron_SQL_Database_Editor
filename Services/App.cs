@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Windows.Forms;
+using System.Windows;
 using System.Xml.Linq;
 using AzureEditor;
 
@@ -61,7 +61,7 @@ namespace Logic
                 return;
             }
             //password authentication
-            temp_pass = login.password_input.Text.ToString();
+            temp_pass = login.password_input.Password.ToString();
             if (string.IsNullOrEmpty(temp_pass))
             {
                 MessageBox.Show("Enter a correct AzureSQL password!");
@@ -132,7 +132,7 @@ namespace Logic
 
                 if (!connections.Any())
                 {
-                    self.update_timer.Enabled = false;
+                    self.update_timer.IsEnabled = false;
                     MessageBox.Show("No connections found in configuration file!");
                     return;
                 }
@@ -149,11 +149,11 @@ namespace Logic
                     };
                     Globals.login_list.Add(load_login);
                 }
-                self.update_timer.Enabled = true;
+                self.update_timer.IsEnabled = true;
             }
             else
             {
-                self.update_timer.Enabled = false;
+                self.update_timer.IsEnabled = false;
                 return;
             }
         }
@@ -165,7 +165,7 @@ namespace Logic
 
         public static void ExportQuery(AppForm self)
         {
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog();
 
         }
     }

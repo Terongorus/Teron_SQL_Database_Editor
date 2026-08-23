@@ -1,0 +1,80 @@
+<Window x:Class="AzureEditor.AppForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Teron SQL Databse Editor" Height="519" Width="933"
+        WindowState="Maximized" WindowStartupLocation="CenterScreen"
+        Closed="AppForm_Closed" Loaded="AppForm_Load">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ToolBar Grid.Row="0" ToolBarTray.IsLocked="True">
+            <Menu>
+                <MenuItem Header="Connections">
+                    <MenuItem x:Name="add_connection_button" Header="Add Connection" Click="add_connection_Click"/>
+                    <MenuItem x:Name="delete_connection_button" Header="Delete Connection" Click="delete_connection_Click"/>
+                </MenuItem>
+            </Menu>
+            <Button x:Name="refresh_connections" Content="Refresh Connection" Click="refresh_connections_Click"/>
+            <Separator/>
+            <Button x:Name="run_query" Content="Run Query" Click="run_query_Click"/>
+            <Button x:Name="partial_query_run" Content="Run Selected Text" Click="partial_query_run_Click"/>
+            <Button x:Name="new_query_button" Content="New Query" Click="new_query_button_Click"/>
+            <Separator/>
+            <Button x:Name="export_query" Content="Export Query" Click="export_query_Click"/>
+            <Button x:Name="import_query_button" Content="Import Query" Click="toolStripButton1_Click"/>
+        </ToolBar>
+
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition x:Name="top_split_row" Height="221"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="tree_column" Width="186"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TreeView x:Name="connections_tree_view" Grid.Column="0"
+                          SelectedItemChanged="connections_tree_view_SelectedItemChanged"/>
+
+                <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#CCCCCC"/>
+
+                <TabControl x:Name="query_tab_control" Grid.Column="2"
+                            SelectionChanged="query_tab_control_SelectedIndexChanged"/>
+            </Grid>
+
+            <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="5" Background="#CCCCCC"/>
+
+            <TabControl x:Name="menus" Grid.Row="2" FontSize="16">
+                <TabItem x:Name="query_result" Header="Query Result">
+                    <DataGrid x:Name="data_viewer" IsReadOnly="True" AutoGenerateColumns="True"/>
+                </TabItem>
+                <TabItem x:Name="messages_log" Header="Messages Log">
+                    <TextBox x:Name="messages_log_textbox" IsReadOnly="True" AcceptsReturn="True"
+                             TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             Background="LightYellow" Text="Messages Log"/>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <ProgressBar x:Name="connection_process" Width="117" Height="16" Visibility="Collapsed" Minimum="0" Maximum="100"/>
+            </StatusBarItem>
+            <StatusBarItem>
+                <TextBlock x:Name="fetch_status"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock x:Name="schema_table_column"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>

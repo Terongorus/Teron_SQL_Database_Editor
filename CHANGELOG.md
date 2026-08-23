@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow major.minor.hotfix (e.g. 1.2.3).
 
+## [3.0.0] - 2026-08-23
+
+UI rewrite from Windows Forms to WPF, following this developer's portfolio-wide move away from
+WinForms. Business logic (SQL querying, DBC file parsing, connection storage) is unchanged -
+only the UI layer and its control APIs were translated.
+
+### Changed
+
+- All five windows (Startup menu, Azure SQL Editor, Warcraft DBC Editor, add/delete-connection
+  dialogs) rewritten in WPF/XAML.
+- The custom owner-drawn closeable query tabs (hand-drawn "x" button with manual hit-testing)
+  are now real WPF buttons built into each tab's header - same close behavior, no pixel-math.
+- DBC file filtering now applies directly to the underlying data view instead of swapping data
+  sources, with no behavior change to the filter expressions themselves.
+- Query editor tabs and log panes are plain multi-line text boxes rather than WPF's
+  FlowDocument-based `RichTextBox` - this app never used any rich-text formatting, so the
+  simpler control is a faithful translation, not a feature reduction.
+
+### Fixed
+
+- Installer packaging (`dotnet publish`) now finds Inno Setup when it's installed under
+  `%LocalAppData%\Programs\Inno Setup 6\` (previously it only checked `Program Files`), and the
+  path handed to the Inno Setup compiler is no longer silently wrong, which had made every
+  publish since the app moved into this repo's own installer folder skip building an installer
+  entirely.
+- Query/results tabs are now correctly announced with their real name ("Query 1", "Query 2",
+  etc.) to screen readers and other assistive/automation tools, instead of an internal object
+  dump.
+
 ## [2.0.0] - 2026-08-23
 
 ### Changed

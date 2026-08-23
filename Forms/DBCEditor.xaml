@@ -1,0 +1,82 @@
+<Window x:Class="Database.DBCEditor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DBC Editor" Height="450" Width="800"
+        WindowState="Maximized" WindowStartupLocation="CenterScreen"
+        Closed="DBCEditor_Closed">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition x:Name="messages_splitter_row" Height="3"/>
+            <RowDefinition x:Name="messages_row" Height="100"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ToolBar Grid.Row="0" ToolBarTray.IsLocked="True">
+            <Button x:Name="open_file" ToolTip="Open File" Click="open_file_Click">
+                <Image Source="pack://siteoforigin:,,,/Resources/Icons/folder-open.png" Width="20" Height="20"/>
+            </Button>
+            <Button x:Name="save_file" ToolTip="Save" Click="save_file_Click">
+                <Image Source="pack://siteoforigin:,,,/Resources/Icons/floppy-disk-circle-arrow-right.png" Width="20" Height="20"/>
+            </Button>
+            <Button x:Name="save_file_as" ToolTip="Save As" Click="save_file_as_Click">
+                <Image Source="pack://siteoforigin:,,,/Resources/Icons/floppy-disk-pen.png" Width="20" Height="20"/>
+            </Button>
+            <Button x:Name="save_all" ToolTip="Save All" Click="save_all_Click">
+                <Image Source="pack://siteoforigin:,,,/Resources/Icons/floppy-disks.png" Width="20" Height="20"/>
+            </Button>
+            <Separator/>
+            <Button x:Name="filter_enable" ToolTip="Create Filter" Click="filter_enable_Click">
+                <Image Source="pack://siteoforigin:,,,/Resources/Icons/filter.png" Width="20" Height="20"/>
+            </Button>
+            <Button x:Name="filter_disable" ToolTip="Remove Filter" Click="filter_disable_Click">
+                <Image Source="pack://siteoforigin:,,,/Resources/Icons/filter-slash.png" Width="20" Height="20"/>
+            </Button>
+        </ToolBar>
+
+        <TabControl x:Name="dbc_tab_control" Grid.Row="1"/>
+
+        <GridSplitter x:Name="messages_splitter" Grid.Row="2" HorizontalAlignment="Stretch" Height="3" Background="#CCCCCC" Visibility="Collapsed"/>
+
+        <TabControl x:Name="messages_control" Grid.Row="3" Visibility="Collapsed">
+            <TabItem x:Name="errors_tab" Header="Errors">
+                <TextBox x:Name="errors_text_box" IsReadOnly="True" TextWrapping="NoWrap"
+                         BorderThickness="0" AcceptsReturn="True"
+                         HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+            </TabItem>
+            <TabItem x:Name="warnings_tab" Header="Warnings">
+                <TextBox x:Name="warnings_text_box" IsReadOnly="True" TextWrapping="NoWrap"
+                         BorderThickness="0" AcceptsReturn="True"
+                         HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+            </TabItem>
+            <TabItem x:Name="messages_tab" Header="Messages">
+                <TextBox x:Name="messages_text_box" IsReadOnly="True" TextWrapping="NoWrap"
+                         BorderThickness="0" AcceptsReturn="True"
+                         HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"/>
+            </TabItem>
+        </TabControl>
+
+        <StatusBar Grid.Row="4">
+            <StatusBarItem>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="pack://siteoforigin:,,,/Resources/Icons/task-checklist.png" Width="16" Height="16" Margin="0,0,4,0"/>
+                    <TextBlock x:Name="message_text"/>
+                </StackPanel>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="error_box_button" Click="error_box_button_Click" Margin="10,0,5,0" Background="Transparent" BorderThickness="0">
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/octagon-xmark.png" Width="16" Height="16"/>
+                    </Button>
+                    <Button x:Name="warning_box_button" Click="warning_box_button_Click" Margin="5,0" Background="Transparent" BorderThickness="0">
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/triangle-warning.png" Width="16" Height="16"/>
+                    </Button>
+                    <Button x:Name="message_box_button" Click="message_box_button_Click" Margin="5,0" Background="Transparent" BorderThickness="0">
+                        <Image Source="pack://siteoforigin:,,,/Resources/Icons/info.png" Width="16" Height="16"/>
+                    </Button>
+                </StackPanel>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>

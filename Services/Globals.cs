@@ -2,16 +2,26 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
 using AzureEditor;
 using Database;
 
 namespace Logic
 {
+    // Lightweight replacement for WinForms' TreeNode.Level/.Text/.Parent chain, since WPF
+    // TreeViewItem has no equivalent built-in hierarchy accessor. Attached via TreeViewItem.Tag.
+    internal class SqlTreeNodeTag
+    {
+        public string Text = "";
+        public int Level;
+        public SqlTreeNodeTag? Parent;
+    }
+
     internal class Globals
     {
-        //form instances
-        public static Form startup = new Startup.Startup(); //initialize a global startup object (Form) which will be a "main menu" for the other Forms, and will be responsible for opening the main AppForm
+        //window instances
+        public static Window startup = new Startup.Startup(); //initialize a global startup object (Window) which will be a "main menu" for the other Windows, and will be responsible for opening the main AppForm
         public static AppForm? app_form;
         public static DBCEditor? dbc_editor;
 
@@ -75,7 +85,7 @@ namespace Logic
 
         public static BindingList<ColumnsViewStructure> internal_columns_list = new BindingList<ColumnsViewStructure>();
 
-        public static List<RichTextBox> box_list = new List<RichTextBox>();
+        public static List<TextBox> box_list = new List<TextBox>();
 
         public static BindingList<Dictionary<string, object>> dbc_viewer_struct = new BindingList<Dictionary<string, object>>();
     }

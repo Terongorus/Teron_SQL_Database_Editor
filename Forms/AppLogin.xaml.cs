@@ -1,30 +1,25 @@
-using System;
-using System.Windows.Forms;
+using System.Windows;
 using Logic;
 
 namespace AzureEditor
 {
-    public partial class AppLogin : Form
+    public partial class AppLogin : Window
     {
         public AppLogin()
         {
             InitializeComponent();
-        }
-
-        private void AppLogin_Load(object sender, EventArgs e)
-        {
             username_input.Text = string.Empty;
-            password_input.Text = string.Empty;
+            password_input.Password = string.Empty;
             conn_string_input.Text = string.Empty;
         }
 
-        private void connect_button_Click(object sender, EventArgs e)
+        private void connect_button_Click(object sender, RoutedEventArgs e)
         {
             AppForm new_AppForm = new AppForm();
             App.AuthenticateUser(new_AppForm, this);
         }
 
-        private void cancel_button_Click(object sender, EventArgs e)
+        private void cancel_button_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }

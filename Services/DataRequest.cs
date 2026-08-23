@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
 using Microsoft.Data.SqlClient;
 using AzureEditor;
 
@@ -40,7 +41,7 @@ namespace Logic
                 {
                     using (SqlConnection schemas_db_connection = new SqlConnection(ConnString))
                     {
-                        self.connection_process.Visible = true;
+                        self.connection_process.Visibility = Visibility.Visible;
                         self.connection_process.Value = 0;
                         self.connection_process.Maximum = 100;
 
@@ -53,13 +54,13 @@ namespace Logic
                             while (!token.IsCancellationRequested)
                             {
                                 await Task.Delay(100);
-                                self.Invoke((Action)(() =>
+                                self.Dispatcher.Invoke(() =>
                                 {
                                     if (self.connection_process.Value < self.connection_process.Maximum - 1)
                                     {
                                         self.connection_process.Value++;
                                     }
-                                }));
+                                });
                             }
                         }, token);
 
@@ -70,10 +71,10 @@ namespace Logic
                             cts.Cancel();
 
                             // Set to 100 safely
-                            self.Invoke((Action)(() =>
+                            self.Dispatcher.Invoke(() =>
                             {
                                 self.connection_process.Value = self.connection_process.Maximum;
-                            }));
+                            });
                         }
                         catch (SqlException ex)
                         {
@@ -82,8 +83,8 @@ namespace Logic
                                 MessageBox.Show(
                                     "Connection timed out while trying to reach the database.\nPlease check your connection settings or server availability.",
                                     "Connection Timeout",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Warning
                                 );
                             }
                             else if (ex.Message.Contains("Can not connect") || ex.Message.Contains("in its current state"))
@@ -91,8 +92,8 @@ namespace Logic
                                 MessageBox.Show(
                                     "Access to database is restricted!\nPlease resolve this issue and then initiate a connection with the database.",
                                     "Database Locked or Restricted",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error
                                 );
                             }
                             else
@@ -100,8 +101,8 @@ namespace Logic
                                 MessageBox.Show(
                                     $"Database connection failed:\n{ex.Message}",
                                     "SQL Error",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error
                                 );
                             }
 
@@ -111,18 +112,18 @@ namespace Logic
                         catch (Exception ex)
                         {
                             cts.Cancel();
-                            self.Invoke((Action)(() =>
+                            self.Dispatcher.Invoke(() =>
                             {
                                 self.connection_process.Value = 0;
                                 self.messages_log_textbox.Clear();
                                 self.messages_log_textbox.AppendText($"Connection failed: {ex.Message}");
-                            }));
+                            });
                             return;
                         }
                         finally
                         {
                             cts.Cancel(); // make sure animation stops
-                            self.Invoke((Action)(() => self.connection_process.Visible = false));
+                            self.Dispatcher.Invoke(() => self.connection_process.Visibility = Visibility.Collapsed);
                         }
                         using (SqlCommand schemas_command = new SqlCommand(schema_query, schemas_db_connection))
                         {
@@ -203,7 +204,7 @@ namespace Logic
                 {
                     using (SqlConnection tables_db_connection = new SqlConnection(ConnString))
                     {
-                        self.connection_process.Visible = true;
+                        self.connection_process.Visibility = Visibility.Visible;
                         self.connection_process.Value = 0;
                         self.connection_process.Maximum = 100;
 
@@ -212,21 +213,21 @@ namespace Logic
                             while (self.connection_process.Value < 90)
                             {
                                 await Task.Delay(100);
-                                self.Invoke((Action)(() =>
+                                self.Dispatcher.Invoke(() =>
                                 {
                                     if (self.connection_process.Value < self.connection_process.Maximum)
                                         self.connection_process.Value++;
-                                }));
+                                });
                             }
                         });
 
                         try
                         {
                             await Task.Run(() => tables_db_connection.Open());
-                            self.Invoke((Action)(() =>
+                            self.Dispatcher.Invoke(() =>
                             {
                                 self.connection_process.Value = Math.Min(self.connection_process.Maximum, 100);
-                            }));
+                            });
                         }
                         catch (SqlException ex)
                         {
@@ -235,8 +236,8 @@ namespace Logic
                                 MessageBox.Show(
                                     "Connection timed out while trying to reach the database.\nPlease check your connection settings or server availability.",
                                     "Connection Timeout",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Warning
                                 );
                             }
                             else if (ex.Message.Contains("Can not connect") || ex.Message.Contains("in its current state"))
@@ -244,8 +245,8 @@ namespace Logic
                                 MessageBox.Show(
                                     "Access to database is restricted!\nPlease resolve this issue and then initiate a connection with the database.",
                                     "Database Locked or Restricted",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error
                                 );
                             }
                             else
@@ -253,8 +254,8 @@ namespace Logic
                                 MessageBox.Show(
                                     $"Database connection failed:\n{ex.Message}",
                                     "SQL Error",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error
                                 );
                             }
 
@@ -269,7 +270,7 @@ namespace Logic
                         }
                         finally
                         {
-                            self.connection_process.Visible = false;
+                            self.connection_process.Visibility = Visibility.Collapsed;
                         }
                         using (SqlCommand tables_command = new SqlCommand(table_query, tables_db_connection))
                         {
@@ -351,7 +352,7 @@ namespace Logic
                 {
                     using (SqlConnection columns_db_connection = new SqlConnection(ConnString))
                     {
-                        self.connection_process.Visible = true;
+                        self.connection_process.Visibility = Visibility.Visible;
                         self.connection_process.Value = 0;
                         self.connection_process.Maximum = 100;
 
@@ -360,21 +361,21 @@ namespace Logic
                             while (self.connection_process.Value < 90)
                             {
                                 await Task.Delay(100);
-                                self.Invoke((Action)(() =>
+                                self.Dispatcher.Invoke(() =>
                                 {
                                     if (self.connection_process.Value < self.connection_process.Maximum)
                                         self.connection_process.Value++;
-                                }));
+                                });
                             }
                         });
 
                         try
                         {
                             await Task.Run(() => columns_db_connection.Open());
-                            self.Invoke((Action)(() =>
+                            self.Dispatcher.Invoke(() =>
                             {
                                 self.connection_process.Value = Math.Min(self.connection_process.Maximum, 100);
-                            }));
+                            });
                         }
                         catch (SqlException ex)
                         {
@@ -383,8 +384,8 @@ namespace Logic
                                 MessageBox.Show(
                                     "Connection timed out while trying to reach the database.\nPlease check your connection settings or server availability.",
                                     "Connection Timeout",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Warning
                                 );
                             }
                             else if (ex.Message.Contains("Can not connect") || ex.Message.Contains("in its current state"))
@@ -392,8 +393,8 @@ namespace Logic
                                 MessageBox.Show(
                                     "Access to database is restricted!\nPlease resolve this issue and then initiate a connection with the database.",
                                     "Database Locked or Restricted",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error
                                 );
                             }
                             else
@@ -401,8 +402,8 @@ namespace Logic
                                 MessageBox.Show(
                                     $"Database connection failed:\n{ex.Message}",
                                     "SQL Error",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error
                                 );
                             }
 
@@ -417,7 +418,7 @@ namespace Logic
                         }
                         finally
                         {
-                            self.connection_process.Visible = false;
+                            self.connection_process.Visibility = Visibility.Collapsed;
                         }
                         using (SqlCommand columns_command = new SqlCommand(column_query, columns_db_connection))
                         {
@@ -448,7 +449,7 @@ namespace Logic
                 self.fetch_status.Text = $"Fetched entries: {columns_count} | Time elapsed: {DateTime.Now - startTime}";
                 self.messages_log_textbox.AppendText("\n--------------------------------------------------");
                 self.messages_log_textbox.AppendText($"\nTotal columns fetched: {columns_count}");
-                self.messages_log_textbox.AppendText($"\nTime elapsed: {DateTime.Now - startTime}")   ;
+                self.messages_log_textbox.AppendText($"\nTime elapsed: {DateTime.Now - startTime}");
                 self.messages_log_textbox.AppendText("\n--------------------------------------------------");
 
                 //helper.SetColumnsSelector(self);
@@ -479,7 +480,7 @@ namespace Logic
 
             if ((!string.IsNullOrEmpty(User) || !string.IsNullOrEmpty(Pass)) && !string.IsNullOrEmpty(ConnString))
             {
-                bool deepNode = self.connections_tree_view.SelectedNode?.Parent?.Parent?.Parent?.Parent != null;
+                bool deepNode = HelperFunctions.GetSelectedNodeTag(self)?.Parent?.Parent?.Parent?.Parent != null;
 
                 if (deepNode)
                 {
@@ -504,8 +505,8 @@ namespace Logic
                 {
                     using (SqlConnection items_db_connection = new SqlConnection(ConnString))
                     {
-                        // ✅ Progress bar animation
-                        self.connection_process.Visible = true;
+                        // Progress bar animation
+                        self.connection_process.Visibility = Visibility.Visible;
                         self.connection_process.Value = 0;
                         self.connection_process.Maximum = 100;
 
@@ -514,21 +515,21 @@ namespace Logic
                             while (self.connection_process.Value < 90)
                             {
                                 await Task.Delay(100);
-                                self.Invoke((Action)(() =>
+                                self.Dispatcher.Invoke(() =>
                                 {
                                     if (self.connection_process.Value < self.connection_process.Maximum)
                                         self.connection_process.Value++;
-                                }));
+                                });
                             }
                         });
 
                         try
                         {
                             await Task.Run(() => items_db_connection.Open());
-                            self.Invoke((Action)(() =>
+                            self.Dispatcher.Invoke(() =>
                             {
                                 self.connection_process.Value = Math.Min(self.connection_process.Maximum, 100);
-                            }));
+                            });
                         }
                         catch (SqlException ex)
                         {
@@ -537,8 +538,8 @@ namespace Logic
                                 MessageBox.Show(
                                     "Connection timed out while trying to reach the database.\nPlease check your connection settings or server availability.",
                                     "Connection Timeout",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Warning
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Warning
                                 );
                             }
                             else if (ex.Message.Contains("Can not connect") || ex.Message.Contains("in its current state"))
@@ -546,8 +547,8 @@ namespace Logic
                                 MessageBox.Show(
                                     "Access to database is restricted!\nPlease resolve this issue and then initiate a connection with the database.",
                                     "Database Locked or Restricted",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error
                                 );
                             }
                             else
@@ -555,8 +556,8 @@ namespace Logic
                                 MessageBox.Show(
                                     $"Database connection failed:\n{ex.Message}",
                                     "SQL Error",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error
                                 );
                             }
 
@@ -571,7 +572,7 @@ namespace Logic
                         }
                         finally
                         {
-                            self.connection_process.Visible = false;
+                            self.connection_process.Visibility = Visibility.Collapsed;
                         }
 
                         using (SqlCommand items_command = new SqlCommand(item_query, items_db_connection))
@@ -639,7 +640,7 @@ namespace Logic
                 return;
             }
 
-            RichTextBox? current_textbox = helper.GetActiveQueryTextBox(self);
+            TextBox? current_textbox = helper.GetActiveQueryTextBox(self);
 
             ConnString = ConnString.Replace("{technical_user_username}", User);
             ConnString = ConnString.Replace("{technical_user_password}", Pass);
@@ -653,7 +654,7 @@ namespace Logic
 
                 if ((!string.IsNullOrEmpty(User) || !string.IsNullOrEmpty(Pass)) && !string.IsNullOrEmpty(ConnString))
                 {
-                    bool deepNode = self.connections_tree_view.SelectedNode?.Parent?.Parent?.Parent?.Parent != null;
+                    bool deepNode = HelperFunctions.GetSelectedNodeTag(self)?.Parent?.Parent?.Parent?.Parent != null;
 
                     if (deepNode)
                     {
@@ -678,8 +679,8 @@ namespace Logic
                     {
                         using (SqlConnection items_db_connection = new SqlConnection(ConnString))
                         {
-                            // ✅ Progress bar animation
-                            self.connection_process.Visible = true;
+                            // Progress bar animation
+                            self.connection_process.Visibility = Visibility.Visible;
                             self.connection_process.Value = 0;
                             self.connection_process.Maximum = 100;
 
@@ -688,21 +689,21 @@ namespace Logic
                                 while (self.connection_process.Value < 90)
                                 {
                                     await Task.Delay(100);
-                                    self.Invoke((Action)(() =>
+                                    self.Dispatcher.Invoke(() =>
                                     {
                                         if (self.connection_process.Value < self.connection_process.Maximum)
                                             self.connection_process.Value++;
-                                    }));
+                                    });
                                 }
                             });
 
                             try
                             {
                                 await Task.Run(() => items_db_connection.Open());
-                                self.Invoke((Action)(() =>
+                                self.Dispatcher.Invoke(() =>
                                 {
                                     self.connection_process.Value = Math.Min(self.connection_process.Maximum, 100);
-                                }));
+                                });
                             }
                             catch (SqlException ex)
                             {
@@ -711,8 +712,8 @@ namespace Logic
                                     MessageBox.Show(
                                         "Connection timed out while trying to reach the database.\nPlease check your connection settings or server availability.",
                                         "Connection Timeout",
-                                        MessageBoxButtons.OK,
-                                        MessageBoxIcon.Warning
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Warning
                                     );
                                 }
                                 else if (ex.Message.Contains("Can not connect") || ex.Message.Contains("in its current state"))
@@ -720,8 +721,8 @@ namespace Logic
                                     MessageBox.Show(
                                         "Access to database is restricted!\nPlease resolve this issue and then initiate a connection with the database.",
                                         "Database Locked or Restricted",
-                                        MessageBoxButtons.OK,
-                                        MessageBoxIcon.Error
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Error
                                     );
                                 }
                                 else
@@ -729,8 +730,8 @@ namespace Logic
                                     MessageBox.Show(
                                         $"Database connection failed:\n{ex.Message}",
                                         "SQL Error",
-                                        MessageBoxButtons.OK,
-                                        MessageBoxIcon.Error
+                                        MessageBoxButton.OK,
+                                        MessageBoxImage.Error
                                     );
                                 }
 
@@ -745,7 +746,7 @@ namespace Logic
                             }
                             finally
                             {
-                                self.connection_process.Visible = false;
+                                self.connection_process.Visibility = Visibility.Collapsed;
                             }
 
                             using (SqlCommand items_command = new SqlCommand(item_query, items_db_connection))
@@ -813,7 +814,8 @@ namespace Logic
 
         public static void SelectItemsFromSelectedTable(AppForm self)
         {
-            if (self == null || self.connections_tree_view.SelectedNode == null) return;
+            var node = HelperFunctions.GetSelectedNodeTag(self);
+            if (self == null || node == null) return;
 
             self.messages_log_textbox.Clear();
 
@@ -826,8 +828,6 @@ namespace Logic
             string login_user = string.Empty;
             string login_pass = string.Empty;
             string login_connstring = string.Empty;
-
-            TreeNode node = self.connections_tree_view.SelectedNode;
 
             // Identify which type of node was selected based on depth
             switch (node.Level)

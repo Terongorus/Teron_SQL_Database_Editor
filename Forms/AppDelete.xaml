@@ -1,0 +1,16 @@
+<Window x:Class="AzureEditor.AppDelete"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Delete Connection" Height="254" Width="584"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <ListBox x:Name="connection_deletion_selection" SelectionMode="Multiple"
+                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,12,0,0" Width="448" Height="160"/>
+
+        <Button x:Name="select_all" Content="Select All" Width="106" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="466,12,0,0" Click="select_all_Click"/>
+        <Button x:Name="deselect_all" Content="Deselect All" Width="106" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="466,41,0,0" Click="deselect_all_Click"/>
+        <Button x:Name="delete_selected" Content="Delete Selected" Width="106" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="466,120,0,0" Click="delete_selected_Click"/>
+        <Button x:Name="delete_all" Content="Delete All" Width="106" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="466,149,0,0" Click="delete_all_Click"/>
+        <Button x:Name="confirm_button" Content="OK" Width="75" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,11,15" Click="confirm_button_Click"/>
+    </Grid>
+</Window>

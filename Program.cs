@@ -2,7 +2,8 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace Logic
 {
@@ -14,12 +15,16 @@ namespace Logic
             using Mutex mutex = new Mutex(true, "TeronSQLDatabaseEditor.SingleInstance", out bool createdNew);
             if (!createdNew)
             {
-                MessageBox.Show($"{AppInfo.DisplayName} is already running.", AppInfo.DisplayName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"{AppInfo.DisplayName} is already running.", AppInfo.DisplayName, MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
-            Application.ThreadException += (sender, e) => LogException(e.Exception);
+            var app = new Application();
+            app.DispatcherUnhandledException += (sender, e) =>
+            {
+                LogException(e.Exception);
+                e.Handled = true;
+            };
             AppDomain.CurrentDomain.UnhandledException += (sender, e) => LogException(e.ExceptionObject as Exception);
             TaskScheduler.UnobservedTaskException += (sender, e) =>
             {
@@ -27,9 +32,7 @@ namespace Logic
                 e.SetObserved();
             };
 
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(Globals.startup);
+            app.Run(Globals.startup);
         }
 
         internal static void LogException(Exception? ex)

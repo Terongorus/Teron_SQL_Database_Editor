@@ -3,7 +3,7 @@ using System.Data;
 using System.IO;
 using System.Text;
 using System.Text.Json;
-using System.Windows.Forms;
+using System.Windows;
 using System.Xml;
 using AzureEditor;
 
@@ -15,9 +15,9 @@ namespace Logic
         {
             HelperFunctions helper = new HelperFunctions();
 
-            if (self.data_viewer.DataSource != null)
+            if (self.data_viewer.ItemsSource != null)
             {
-                SaveFileDialog new_save_file_dialog = new SaveFileDialog();
+                Microsoft.Win32.SaveFileDialog new_save_file_dialog = new Microsoft.Win32.SaveFileDialog();
                 new_save_file_dialog.Title = "Export Query Result as CSV";
                 new_save_file_dialog.FileName = (Globals.table ?? "table") + "_query_results";
                 new_save_file_dialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
@@ -29,7 +29,7 @@ namespace Logic
                 StringBuilder csv = new StringBuilder();
 
 
-                if (new_save_file_dialog.ShowDialog() == DialogResult.OK)
+                if (new_save_file_dialog.ShowDialog() == true)
                 {
                     // Add column headers
                     for (int i = 0; i < new_table.Columns.Count; i++)
@@ -59,11 +59,11 @@ namespace Logic
                         csv.AppendLine();
                     }
                     File.WriteAllText(new_save_file_dialog.FileName, csv.ToString(), Encoding.UTF8);
-                    MessageBox.Show("CSV file exported successfully!", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("CSV file exported successfully!", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             else
@@ -76,9 +76,9 @@ namespace Logic
         {
             HelperFunctions helper = new HelperFunctions();
 
-            if (self.data_viewer.DataSource != null)
+            if (self.data_viewer.ItemsSource != null)
             {
-                SaveFileDialog dlg = new SaveFileDialog
+                Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
                 {
                     Title = "Export Query Result as SQL",
                     FileName = (Globals.table ?? "table") + "_query_results",
@@ -90,7 +90,7 @@ namespace Logic
                 DataTable table = helper.ToDataTable(Globals.internal_items_list);
                 StringBuilder sql = new StringBuilder();
 
-                if (dlg.ShowDialog() == DialogResult.OK)
+                if (dlg.ShowDialog() == true)
                 {
                     foreach (DataRow row in table.Rows)
                     {
@@ -116,11 +116,11 @@ namespace Logic
                         sql.AppendLine(");");
                     }
                     File.WriteAllText(dlg.FileName, sql.ToString(), Encoding.UTF8);
-                    MessageBox.Show("SQL file exported successfully!", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("SQL file exported successfully!", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             else
@@ -133,9 +133,9 @@ namespace Logic
         {
             HelperFunctions helper = new HelperFunctions();
 
-            if (self.data_viewer.DataSource != null)
+            if (self.data_viewer.ItemsSource != null)
             {
-                SaveFileDialog dlg = new SaveFileDialog
+                Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
                 {
                     Title = "Export Query Result as XML",
                     FileName = (Globals.table ?? "table") + "_query_results",
@@ -146,18 +146,18 @@ namespace Logic
 
                 DataTable table = helper.ToDataTable(Globals.internal_items_list);
 
-                if (dlg.ShowDialog() == DialogResult.OK)
+                if (dlg.ShowDialog() == true)
                 {
                     using (XmlWriter writer = XmlWriter.Create(dlg.FileName, new XmlWriterSettings { Indent = true, Encoding = Encoding.UTF8 }))
                     {
                         table.TableName = Globals.table?.ToString() ?? "table";
                         table.WriteXml(writer, XmlWriteMode.WriteSchema, false);
                     }
-                    MessageBox.Show("XML file exported successfully!", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("XML file exported successfully!", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             else
@@ -170,9 +170,9 @@ namespace Logic
         {
             HelperFunctions helper = new HelperFunctions();
 
-            if (self.data_viewer.DataSource != null)
+            if (self.data_viewer.ItemsSource != null)
             {
-                SaveFileDialog dlg = new SaveFileDialog
+                Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog
                 {
                     Title = "Export Query Result as JSON",
                     FileName = (Globals.table ?? "table") + "_query_results",
@@ -183,7 +183,7 @@ namespace Logic
 
                 DataTable table = helper.ToDataTable(Globals.internal_items_list);
 
-                if (dlg.ShowDialog() == DialogResult.OK)
+                if (dlg.ShowDialog() == true)
                 {
                     // Convert DataTable → list of dictionaries
                     var rows = new System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object>>();
@@ -201,11 +201,11 @@ namespace Logic
                     });
 
                     File.WriteAllText(dlg.FileName, json, Encoding.UTF8);
-                    MessageBox.Show("JSON file exported successfully!", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("JSON file exported successfully!", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Export process terminated!", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             else

@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using System.IO;
 using System.Text;
 using System.Xml.Linq;
@@ -12,108 +14,74 @@ using static Logic.Globals;
 
 namespace Database
 {
-    public partial class DBCEditor : Form
+    public partial class DBCEditor : Window
     {
         DBCLogic DBCLogic = new DBCLogic();
         public DBCEditor()
         {
             InitializeComponent();
-            Text = $"DBC Editor - {AppInfo.DisplayNameWithVersion}";
+            Title = $"DBC Editor - {AppInfo.DisplayNameWithVersion}";
         }
 
-        private void toolStripButton1_Click(object sender, System.EventArgs e)
+        private void open_file_Click(object sender, RoutedEventArgs e)
         {
             DBCLogic.SelectFile();
         }
 
-        private void DBCEditor_FormClosed(object sender, FormClosedEventArgs e)
+        private void DBCEditor_Closed(object? sender, EventArgs e)
         {
             startup.Show();
-            startup.Focus();
+            startup.Activate();
         }
 
-        private void save_file_Click(object sender, EventArgs e)
+        private void save_file_Click(object sender, RoutedEventArgs e)
         {
             DBCLogic.SaveFile();
         }
 
-        private void save_file_as_Click(object sender, EventArgs e)
+        private void save_file_as_Click(object sender, RoutedEventArgs e)
         {
             DBCLogic.SaveFileAs();
         }
 
-        private void save_all_Click(object sender, EventArgs e)
+        private void save_all_Click(object sender, RoutedEventArgs e)
         {
             DBCLogic.SaveAll();
         }
 
-        private void error_box_button_Click(object sender, EventArgs e)
+        private void SetMessagesPanelVisible(bool visible)
         {
-            bool error_frame_visible = messages_control.SelectedTab == errors_tab && messages_control.Visible;
-            if (!error_frame_visible) { messages_control.SelectedTab = errors_tab; messages_control.Visible = true; }
-            else messages_control.Visible = false;
+            messages_control.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            messages_splitter.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private void warning_box_button_Click(object sender, EventArgs e)
+        private void error_box_button_Click(object sender, RoutedEventArgs e)
         {
-            bool warning_frame_visible = messages_control.SelectedTab == warnings_tab && messages_control.Visible;
-            if (!warning_frame_visible) { messages_control.SelectedTab = warnings_tab; messages_control.Visible = true; }
-            else messages_control.Visible = false;
+            bool error_frame_visible = messages_control.SelectedItem == errors_tab && messages_control.Visibility == Visibility.Visible;
+            if (!error_frame_visible) { messages_control.SelectedItem = errors_tab; SetMessagesPanelVisible(true); }
+            else SetMessagesPanelVisible(false);
         }
 
-        private void message_box_button_Click(object sender, EventArgs e)
+        private void warning_box_button_Click(object sender, RoutedEventArgs e)
         {
-            bool message_frame_visible = messages_control.SelectedTab == messages_tab && messages_control.Visible;
-            if (!message_frame_visible) { messages_control.SelectedTab = messages_tab; messages_control.Visible = true; }
-            else messages_control.Visible = false;
+            bool warning_frame_visible = messages_control.SelectedItem == warnings_tab && messages_control.Visibility == Visibility.Visible;
+            if (!warning_frame_visible) { messages_control.SelectedItem = warnings_tab; SetMessagesPanelVisible(true); }
+            else SetMessagesPanelVisible(false);
         }
 
-        private void dbc_tab_control_MouseClick(object sender, MouseEventArgs e)
+        private void message_box_button_Click(object sender, RoutedEventArgs e)
         {
-            if (e.Button == MouseButtons.Right && sender is TabControl tabControl)
-            {
-                // Find which tab was right-clicked
-                int clickedTabIndex = -1;
-                for (int i = 0; i < tabControl.TabPages.Count; i++)
-                {
-                    if (tabControl.GetTabRect(i).Contains(e.Location))
-                    {
-                        clickedTabIndex = i;
-                        break;
-                    }
-                }
-
-                if (clickedTabIndex >= 0)
-                {
-                    // Select the clicked tab
-                    tabControl.SelectedIndex = clickedTabIndex;
-
-                    ContextMenuStrip menu = new ContextMenuStrip();
-
-                    menu.Items.Add("Close Current Tab").Click += (s, ev) =>
-                    {
-                        if (tabControl.SelectedTab != null)
-                        {
-                            tabControl.TabPages.Remove(tabControl.SelectedTab);
-                        }
-                    };
-
-                    menu.Items.Add("Close All Tabs").Click += (s, ev) =>
-                    {
-                        tabControl.TabPages.Clear();
-                    };
-
-                    menu.Show(tabControl, e.Location);
-                }
-            }
+            bool message_frame_visible = messages_control.SelectedItem == messages_tab && messages_control.Visibility == Visibility.Visible;
+            if (!message_frame_visible) { messages_control.SelectedItem = messages_tab; SetMessagesPanelVisible(true); }
+            else SetMessagesPanelVisible(false);
         }
 
-        private void filter_enable_Click(object sender, EventArgs e)
+        private void filter_enable_Click(object sender, RoutedEventArgs e)
         {
             DBCLogic.CreateNewFilter();
         }
 
-        private void filter_disable_Click(object sender, EventArgs e)
+        private void filter_disable_Click(object sender, RoutedEventArgs e)
         {
             DBCLogic.ClearFilter();
         }
@@ -147,11 +115,12 @@ namespace Database
 
             return table;
         }
-        public DialogResult SelectFile()
+
+        public bool? SelectFile()
         {
             dbc_viewer_struct.Clear();
 
-            var ofd = new OpenFileDialog();
+            var ofd = new Microsoft.Win32.OpenFileDialog();
             ofd.Filter = "DBC files (*.dbc)|*.dbc|All files (*.*)|*.*";
             ofd.Multiselect = false;
             ofd.Title = "Select DBC file(s)";
@@ -174,7 +143,7 @@ namespace Database
                         byte[] header = data_reader.ReadBytes(4);
                         if (Encoding.ASCII.GetString(header) != "WDBC")
                         {
-                            MessageBox.Show("Invalid DBC file format.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show("Invalid DBC file format.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             dbc_editor?.errors_text_box.AppendText($"File '{ofd.FileName}' is not a valid DBC file.\n");
                             e.Cancel = true;
                             return;
@@ -272,7 +241,7 @@ namespace Database
                     }
 
                     var new_dbc_data = ToDataTable(dbc_viewer_struct);
-                    var new_tab = new TabPage(Path.GetFileName(ofd.FileName));
+                    var new_tab = new TabItem { Header = Path.GetFileName(ofd.FileName) };
                     new_tab.Tag = ofd.FileName; // Store the full file path
                     if (dbc_editor is not null)
                     {
@@ -285,7 +254,7 @@ namespace Database
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error loading DBC file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Error loading DBC file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText($"Error loading file '{ofd.FileName}': {ex.Message}\n");
                     e.Cancel = true;
                 }
@@ -375,203 +344,119 @@ namespace Database
             return Encoding.UTF8.GetString(stringBlock, startIdx, endIdx - startIdx);
         }
 
+        // Returns the rows currently visible in the grid (i.e. respecting any active RowFilter),
+        // matching the original WinForms behavior where a filtered BindingSource meant Save/SaveAs/
+        // SaveAll only wrote back the currently-displayed subset of rows, not the whole table.
+        private static DataView? GetBackingView(DataGrid dataGridView)
+        {
+            return dataGridView.ItemsSource as DataView;
+        }
+
         public void SaveFile()
         {
             try
             {
                 // Get the currently active tab
-                if (dbc_editor?.dbc_tab_control?.SelectedTab == null)
+                if (dbc_editor?.dbc_tab_control?.SelectedItem is not TabItem selectedTab)
                 {
-                    MessageBox.Show("No DBC file is currently loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No DBC file is currently loaded.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText("Save failed: No DBC file is currently loaded.\n");
                     return;
                 }
 
-                // Get the DataGridView from the active tab
-                DataGridView? dataGridView = dbc_editor.dbc_tab_control.SelectedTab.Controls[0] as DataGridView;
-                if (dataGridView == null)
+                // Get the DataGrid from the active tab
+                DataGrid? dataGridView = selectedTab.Content as DataGrid;
+                DataView? view = dataGridView != null ? GetBackingView(dataGridView) : null;
+                if (dataGridView == null || view == null)
                 {
-                    MessageBox.Show("DataGridView not found in the active tab.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("DataGridView not found in the active tab.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText("Save failed: DataGridView not found in the active tab.\n");
                     return;
                 }
 
                 // Verify we have data to save
-                if (dataGridView.Rows.Count == 0)
+                if (view.Count == 0)
                 {
-                    MessageBox.Show("No data to save.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No data to save.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText("Save failed: No data to save.\n");
                     return;
                 }
 
                 try
                 {
-                    string? tag = dbc_editor.dbc_tab_control.SelectedTab.Tag?.ToString();
+                    string? tag = selectedTab.Tag?.ToString();
                     // Get the original file path from the tab's Tag property
                     string filePath = tag ?? string.Empty;
                     if (string.IsNullOrEmpty(filePath))
                     {
-                        MessageBox.Show("File path not found. Please use 'Save As' instead.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("File path not found. Please use 'Save As' instead.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         dbc_editor?.errors_text_box.AppendText("Save failed: File path not found. Please use 'Save As' instead.\n");
                         return;
                     }
 
-                    using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-                    using (var writer = new BinaryWriter(fileStream))
-                    {
-                        // Write WDBC header
-                        writer.Write(Encoding.ASCII.GetBytes("WDBC"));
-
-                        // Prepare record data
-                        int recordCount = dataGridView.Rows.Count;
-                        int fieldCount = dataGridView.Columns.Count;
-                        int recordSize = fieldCount * 4; // Each field is uint32 (4 bytes)
-                        int stringBlockSize = 0; // TODO: Implement string block handling
-
-                        // Write metadata
-                        writer.Write(recordCount);
-                        writer.Write(fieldCount);
-                        writer.Write(recordSize);
-                        writer.Write(stringBlockSize);
-
-                        // Write records - convert each cell value to uint32
-                        for (int i = 0; i < recordCount; i++)
-                        {
-                            DataGridViewRow row = dataGridView.Rows[i];
-                            for (int j = 0; j < fieldCount; j++)
-                            {
-                                object? cellValue = row.Cells[j].Value;
-                                uint value = 0;
-
-                                // Try to convert cell value to uint32
-                                if (cellValue != null && cellValue != DBNull.Value)
-                                {
-                                    if (cellValue is uint)
-                                    {
-                                        value = (uint)cellValue;
-                                    }
-                                    else if (uint.TryParse(cellValue.ToString(), out uint parsedValue))
-                                    {
-                                        value = parsedValue;
-                                    }
-                                }
-
-                                writer.Write(value);
-                            }
-                        }
-
-                        // Write string block (currently empty)
-                        // TODO: Implement string offset resolution for string fields
-
-                        dbc_editor?.messages_text_box.AppendText($"File saved successfully: {filePath}\n");
-                        dbc_editor?.message_text.Text = $"File saved successfully: {filePath}";
-                    }
+                    WriteDbcFile(filePath, view);
+                    dbc_editor?.messages_text_box.AppendText($"File saved successfully: {filePath}\n");
+                    if (dbc_editor != null) dbc_editor.message_text.Text = $"File saved successfully: {filePath}";
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText($"Error saving file: {ex.Message}\n");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText($"Error: {ex.Message}\n");
             }
         }
 
-        public DialogResult SaveFileAs()
+        public bool? SaveFileAs()
         {
             try
             {
                 // Get the currently active tab
-                if (dbc_editor?.dbc_tab_control?.SelectedTab == null)
+                if (dbc_editor?.dbc_tab_control?.SelectedItem is not TabItem selectedTab)
                 {
-                    MessageBox.Show("No DBC file is currently loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No DBC file is currently loaded.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText("Save As failed: No DBC file is currently loaded.\n");
-                    return DialogResult.Cancel;
+                    return false;
                 }
 
-                // Get the DataGridView from the active tab
-                DataGridView? dataGridView = dbc_editor.dbc_tab_control.SelectedTab.Controls[0] as DataGridView;
-                if (dataGridView == null)
+                // Get the DataGrid from the active tab
+                DataGrid? dataGridView = selectedTab.Content as DataGrid;
+                DataView? view = dataGridView != null ? GetBackingView(dataGridView) : null;
+                if (dataGridView == null || view == null)
                 {
-                    MessageBox.Show("DataGridView not found in the active tab.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("DataGridView not found in the active tab.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText("Save As failed: DataGridView not found in the active tab.\n");
-                    return DialogResult.Cancel;
+                    return false;
                 }
 
                 // Verify we have data to save
-                if (dataGridView.Rows.Count == 0)
+                if (view.Count == 0)
                 {
-                    MessageBox.Show("No data to save.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No data to save.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText("Save As failed: No data to save.\n");
-                    return DialogResult.Cancel;
+                    return false;
                 }
 
-                var svf = new SaveFileDialog();
+                var svf = new Microsoft.Win32.SaveFileDialog();
                 svf.Filter = "DBC files (*.dbc)|*.dbc|All files (*.*)|*.*";
-                svf.FileName = dbc_editor.dbc_tab_control.SelectedTab.Text; // Default to current tab name
+                svf.FileName = selectedTab.Header?.ToString() ?? "file.dbc"; // Default to current tab name
                 svf.Title = "Save DBC file";
                 svf.FileOk += (sender, e) =>
                 {
                     try
                     {
                         string filePath = svf.FileName;
-
-                        using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-                        using (var writer = new BinaryWriter(fileStream))
-                        {
-                            // Write WDBC header
-                            writer.Write(Encoding.ASCII.GetBytes("WDBC"));
-
-                            // Prepare record data
-                            int recordCount = dataGridView.Rows.Count;
-                            int fieldCount = dataGridView.Columns.Count;
-                            int recordSize = fieldCount * 4; // Each field is uint32 (4 bytes)
-                            int stringBlockSize = 0; // TODO: Implement string block handling
-
-                            // Write metadata
-                            writer.Write(recordCount);
-                            writer.Write(fieldCount);
-                            writer.Write(recordSize);
-                            writer.Write(stringBlockSize);
-
-                            // Write records - convert each cell value to uint32
-                            for (int i = 0; i < recordCount; i++)
-                            {
-                                DataGridViewRow row = dataGridView.Rows[i];
-                                for (int j = 0; j < fieldCount; j++)
-                                {
-                                    object? cellValue = row.Cells[j].Value;
-                                    uint value = 0;
-
-                                    // Try to convert cell value to uint32
-                                    if (cellValue != null && cellValue != DBNull.Value)
-                                    {
-                                        if (cellValue is uint)
-                                        {
-                                            value = (uint)cellValue;
-                                        }
-                                        else if (uint.TryParse(cellValue.ToString(), out uint parsedValue))
-                                        {
-                                            value = parsedValue;
-                                        }
-                                    }
-
-                                    writer.Write(value);
-                                }
-                            }
-
-                            // Write string block (currently empty)
-                            // TODO: Implement string offset resolution for string fields
-                            dbc_editor?.messages_text_box.AppendText($"File saved successfully: {filePath}\n");
-                            dbc_editor?.message_text.Text = $"File saved successfully: {filePath}";
-                        }
+                        WriteDbcFile(filePath, view);
+                        dbc_editor?.messages_text_box.AppendText($"File saved successfully: {filePath}\n");
+                        if (dbc_editor != null) dbc_editor.message_text.Text = $"File saved successfully: {filePath}";
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Error saving file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         dbc_editor?.errors_text_box.AppendText($"Error saving file: {ex.Message}\n");
                     }
                 };
@@ -580,9 +465,9 @@ namespace Database
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error initializing save dialog: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error initializing save dialog: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText($"Error initializing save dialog: {ex.Message}\n");
-                return DialogResult.Cancel;
+                return false;
             }
         }
 
@@ -591,9 +476,9 @@ namespace Database
             try
             {
                 // Check if there are any tabs open
-                if (dbc_editor?.dbc_tab_control?.TabPages.Count == 0)
+                if (dbc_editor?.dbc_tab_control?.Items.Count == 0)
                 {
-                    MessageBox.Show("No DBC files are open.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No DBC files are open.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText("No DBC files are open.\n");
                     return;
                 }
@@ -601,27 +486,29 @@ namespace Database
                 int savedCount = 0;
                 int failedCount = 0;
                 var failedFiles = new List<string>();
-                var tab_pages = dbc_editor?.dbc_tab_control.TabPages.Cast<TabPage>().ToList();
+                var tab_pages = dbc_editor?.dbc_tab_control.Items.Cast<TabItem>().ToList();
 
                 // Iterate through all tabs
-                foreach (TabPage tab in tab_pages ?? Enumerable.Empty<TabPage>())
+                foreach (TabItem tab in tab_pages ?? Enumerable.Empty<TabItem>())
                 {
+                    string tabName = tab.Header?.ToString() ?? "file.dbc";
                     try
                     {
-                        // Get the DataGridView from the tab
-                        DataGridView? dataGridView = tab.Controls[0] as DataGridView;
-                        if (dataGridView == null)
+                        // Get the DataGrid from the tab
+                        DataGrid? dataGridView = tab.Content as DataGrid;
+                        DataView? view = dataGridView != null ? GetBackingView(dataGridView) : null;
+                        if (dataGridView == null || view == null)
                         {
                             failedCount++;
-                            failedFiles.Add($"{tab.Text} (DataGridView not found)");
+                            failedFiles.Add($"{tabName} (DataGridView not found)");
                             continue;
                         }
 
                         // Skip if no data
-                        if (dataGridView.Rows.Count == 0)
+                        if (view.Count == 0)
                         {
                             failedCount++;
-                            failedFiles.Add($"{tab.Text} (no data)");
+                            failedFiles.Add($"{tabName} (no data)");
                             continue;
                         }
 
@@ -630,64 +517,17 @@ namespace Database
                         if (string.IsNullOrEmpty(filePath))
                         {
                             failedCount++;
-                            failedFiles.Add($"{tab.Text} (file path not found)");
+                            failedFiles.Add($"{tabName} (file path not found)");
                             continue;
                         }
 
-                        using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-                        using (var writer = new BinaryWriter(fileStream))
-                        {
-                            // Write WDBC header
-                            writer.Write(Encoding.ASCII.GetBytes("WDBC"));
-
-                            // Prepare record data
-                            int recordCount = dataGridView.Rows.Count;
-                            int fieldCount = dataGridView.Columns.Count;
-                            int recordSize = fieldCount * 4; // Each field is uint32 (4 bytes)
-                            int stringBlockSize = 0; // TODO: Implement string block handling
-
-                            // Write metadata
-                            writer.Write(recordCount);
-                            writer.Write(fieldCount);
-                            writer.Write(recordSize);
-                            writer.Write(stringBlockSize);
-
-                            // Write records - convert each cell value to uint32
-                            for (int i = 0; i < recordCount; i++)
-                            {
-                                DataGridViewRow row = dataGridView.Rows[i];
-                                for (int j = 0; j < fieldCount; j++)
-                                {
-                                    object? cellValue = row.Cells[j].Value;
-                                    uint value = 0;
-
-                                    // Try to convert cell value to uint32
-                                    if (cellValue != null && cellValue != DBNull.Value)
-                                    {
-                                        if (cellValue is uint)
-                                        {
-                                            value = (uint)cellValue;
-                                        }
-                                        else if (uint.TryParse(cellValue.ToString(), out uint parsedValue))
-                                        {
-                                            value = parsedValue;
-                                        }
-                                    }
-
-                                    writer.Write(value);
-                                }
-                            }
-
-                            // Write string block (currently empty)
-                            // TODO: Implement string offset resolution for string fields
-
-                            savedCount++;
-                        }
+                        WriteDbcFile(filePath, view);
+                        savedCount++;
                     }
                     catch (Exception ex)
                     {
                         failedCount++;
-                        failedFiles.Add($"{tab.Text} ({ex.Message})");
+                        failedFiles.Add($"{tabName} ({ex.Message})");
                     }
                 }
 
@@ -698,18 +538,71 @@ namespace Database
                     message += $", failed to save {failedCount} file(s):\n";
                     message += string.Join("\n", failedFiles);
                     dbc_editor?.messages_text_box.AppendText($"Save All completed with errors: {failedCount} file(s) failed to save.\n");
-                    dbc_editor?.message_text.Text = $"Save All completed with errors: {failedCount} file(s) failed to save.";
+                    if (dbc_editor != null) dbc_editor.message_text.Text = $"Save All completed with errors: {failedCount} file(s) failed to save.";
                 }
                 else
                 {
                     dbc_editor?.messages_text_box.AppendText($"Save All completed successfully: {savedCount} file(s) saved.\n");
-                    dbc_editor?.message_text.Text = $"Save All completed successfully: {savedCount} file(s) saved.";
+                    if (dbc_editor != null) dbc_editor.message_text.Text = $"Save All completed successfully: {savedCount} file(s) saved.";
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error in Save All: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error in Save All: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText($"Error in Save All: {ex.Message}\n");
+            }
+        }
+
+        // Shared binary writer used by SaveFile/SaveFileAs/SaveAll - writes exactly the rows
+        // currently visible in `view` (i.e. respecting any active RowFilter), matching the
+        // original DataGridView-bound-to-a-filtered-BindingSource behavior.
+        private static void WriteDbcFile(string filePath, DataView view)
+        {
+            using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            using (var writer = new BinaryWriter(fileStream))
+            {
+                // Write WDBC header
+                writer.Write(Encoding.ASCII.GetBytes("WDBC"));
+
+                // Prepare record data
+                int recordCount = view.Count;
+                int fieldCount = view.Table?.Columns.Count ?? 0;
+                int recordSize = fieldCount * 4; // Each field is uint32 (4 bytes)
+                int stringBlockSize = 0; // TODO: Implement string block handling
+
+                // Write metadata
+                writer.Write(recordCount);
+                writer.Write(fieldCount);
+                writer.Write(recordSize);
+                writer.Write(stringBlockSize);
+
+                // Write records - convert each cell value to uint32
+                for (int i = 0; i < recordCount; i++)
+                {
+                    for (int j = 0; j < fieldCount; j++)
+                    {
+                        object? cellValue = view[i][j];
+                        uint value = 0;
+
+                        // Try to convert cell value to uint32
+                        if (cellValue != null && cellValue != DBNull.Value)
+                        {
+                            if (cellValue is uint)
+                            {
+                                value = (uint)cellValue;
+                            }
+                            else if (uint.TryParse(cellValue.ToString(), out uint parsedValue))
+                            {
+                                value = parsedValue;
+                            }
+                        }
+
+                        writer.Write(value);
+                    }
+                }
+
+                // Write string block (currently empty)
+                // TODO: Implement string offset resolution for string fields
             }
         }
 
@@ -719,7 +612,7 @@ namespace Database
             {
                 if (!Directory.Exists(definitons_dir))
                 {
-                    MessageBox.Show("Definitions folder not found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Definitions folder not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText($"Definitions folder not found: {definitons_dir}\n");
                     return null;
                 }
@@ -733,93 +626,81 @@ namespace Database
 
                 if (xmlFiles.Length == 0)
                 {
-                    MessageBox.Show("No definition files found.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No definition files found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     dbc_editor?.errors_text_box.AppendText($"No definition files found in: {definitons_dir}\n");
                     return null;
                 }
 
                 // Let user select the client version
-                var form = new Form
+                var window = new Window
                 {
-                    Text = "Select Client Version",
+                    Title = "Select Client Version",
                     Width = 400,
                     Height = 200,
-                    StartPosition = FormStartPosition.CenterScreen,
-                    FormBorderStyle = FormBorderStyle.FixedDialog,
-                    MaximizeBox = false,
-                    MinimizeBox = false
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    ResizeMode = ResizeMode.NoResize
                 };
 
-                var label = new Label { Text = "Select the client version for this DBC file:", Left = 10, Top = 10, Width = 370 };
+                var label = new Label { Content = "Select the client version for this DBC file:", Margin = new Thickness(10, 10, 10, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
                 var comboBox = new ComboBox
                 {
-                    Left = 10,
-                    Top = 35,
-                    Width = 370,
-                    DropDownStyle = ComboBoxStyle.DropDownList,
-                    DataSource = xmlFiles,
-                    DisplayMember = "Display",
-                    ValueMember = "FullName"
+                    Margin = new Thickness(10, 35, 10, 0),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    ItemsSource = xmlFiles,
+                    DisplayMemberPath = "Display",
+                    SelectedValuePath = "FullName"
                 };
 
-                var okButton = new Button { Text = "OK", Left = 210, Top = 100, Width = 80, Height = 30, DialogResult = DialogResult.OK };
-                var cancelButton = new Button { Text = "Cancel", Left = 300, Top = 100, Width = 80, Height = 30, DialogResult = DialogResult.Cancel };
+                bool dialogResult = false;
+                var okButton = new Button { Content = "OK", Width = 80, Height = 30, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(210, 100, 0, 0), IsDefault = true };
+                var cancelButton = new Button { Content = "Cancel", Width = 80, Height = 30, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(300, 100, 0, 0), IsCancel = true };
 
-                form.Controls.Add(label);
-                form.Controls.Add(comboBox);
-                form.Controls.Add(okButton);
-                form.Controls.Add(cancelButton);
-                form.AcceptButton = okButton;
-                form.CancelButton = cancelButton;
+                okButton.Click += (s, e) => { dialogResult = true; window.Close(); };
+                cancelButton.Click += (s, e) => { dialogResult = false; window.Close(); };
 
-                if (form.ShowDialog() != DialogResult.OK)
+                var grid = new Grid();
+                grid.Children.Add(label);
+                grid.Children.Add(comboBox);
+                grid.Children.Add(okButton);
+                grid.Children.Add(cancelButton);
+                window.Content = grid;
+
+                window.ShowDialog();
+
+                if (!dialogResult)
                     return null;
 
                 return comboBox.SelectedValue?.ToString();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error selecting client version: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error selecting client version: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText($"Error selecting client version: {ex.Message}\n");
                 return null;
             }
         }
 
-        private void CreateNewDataGrid(TabControl parent, TabPage tabPage, DataTable dbc_data, DBCEditor editor, string dbcFileName, string clientVersion)
+        private void CreateNewDataGrid(TabControl parent, TabItem tabPage, DataTable dbc_data, DBCEditor editor, string dbcFileName, string clientVersion)
         {
-            DataGridView dataGridView = new DataGridView();
-            dataGridView.AllowUserToAddRows = true;
-            dataGridView.AllowUserToDeleteRows = true;
-            dataGridView.AutoResizeColumnHeadersHeight();
-            dataGridView.AutoResizeRowHeadersWidth(DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders);
-            dataGridView.Parent = tabPage;
-            dataGridView.Dock = DockStyle.Fill;
+            DataGrid dataGridView = new DataGrid();
+            dataGridView.AutoGenerateColumns = false;
+            dataGridView.CanUserAddRows = true;
+            dataGridView.CanUserDeleteRows = true;
 
-            // Handle scroll with keyboard modifiers
-            // SHIFT + scroll = horizontal scroll
-            // CTRL + scroll = vertical scroll
-            dataGridView.MouseWheel += (s, e) =>
+            // Right-click a tab to close it, replacing the WinForms owner-drawn tab
+            // hit-testing hack with a plain WPF context menu wired directly on the tab.
+            tabPage.MouseRightButtonDown += (s, e) =>
             {
-                HandledMouseEventArgs? hme = e as HandledMouseEventArgs;
-                if (hme != null)
-                {
-                    if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift)
-                    {
-                        // SHIFT pressed: horizontal scroll
-                        int scrollAmount = 50;
-                        int newOffset = dataGridView.HorizontalScrollingOffset + (e.Delta > 0 ? -scrollAmount : scrollAmount);
-                        dataGridView.HorizontalScrollingOffset = Math.Max(0, newOffset);
-                        hme.Handled = true;
-                    }
-                    else if ((Control.ModifierKeys & Keys.Control) == Keys.Control)
-                    {
-                        // CTRL pressed: vertical scroll
-                        int scrollRows = 3;
-                        int newRowIndex = dataGridView.FirstDisplayedScrollingRowIndex + (e.Delta > 0 ? -scrollRows : scrollRows);
-                        dataGridView.FirstDisplayedScrollingRowIndex = Math.Max(0, newRowIndex);
-                        hme.Handled = true;
-                    }
-                }
+                parent.SelectedItem = tabPage;
+                var menu = new ContextMenu();
+                var closeCurrent = new MenuItem { Header = "Close Current Tab" };
+                closeCurrent.Click += (s2, e2) => parent.Items.Remove(tabPage);
+                var closeAll = new MenuItem { Header = "Close All Tabs" };
+                closeAll.Click += (s2, e2) => parent.Items.Clear();
+                menu.Items.Add(closeCurrent);
+                menu.Items.Add(closeAll);
+                menu.IsOpen = true;
             };
 
             // Load and apply field definitions BEFORE binding data
@@ -828,17 +709,19 @@ namespace Database
             // If definitions failed to load, use default column names
             if (dataGridView.Columns.Count == 0)
             {
-                dataGridView.DataSource = dbc_data;
+                dataGridView.AutoGenerateColumns = true;
+                dataGridView.ItemsSource = dbc_data.DefaultView;
             }
 
-            tabPage.Controls.Add(dataGridView);
-            parent.TabPages.Add(tabPage);
-            parent.SelectedTab = tabPage;
+            tabPage.Content = dataGridView;
+            parent.Items.Add(tabPage);
+            parent.SelectedItem = tabPage;
 
-            dbc_editor?.message_text.Text = $"Loaded {dbcFileName} with client version {clientVersion.Replace(".xml", string.Empty)}.";
+            if (dbc_editor != null)
+                dbc_editor.message_text.Text = $"Loaded {dbcFileName} with client version {clientVersion.Replace(".xml", string.Empty)}.";
         }
 
-        private void LoadDataDefinitions(string dbcFileName, string clientVersion, DataGridView dataGridView, DataTable dbc_data)
+        private void LoadDataDefinitions(string dbcFileName, string clientVersion, DataGrid dataGridView, DataTable dbc_data)
         {
             try
             {
@@ -846,9 +729,9 @@ namespace Database
 
                 if (!File.Exists(xmlFilePath))
                 {
-                    MessageBox.Show($"Definition file not found: {clientVersion}", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show($"Definition file not found: {clientVersion}", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                     dbc_editor?.warnings_text_box.AppendText($"Definition file not found: {clientVersion}\n");
-                    dataGridView.DataSource = dbc_data;
+                    dataGridView.ItemsSource = dbc_data.DefaultView;
                     return;
                 }
 
@@ -863,9 +746,9 @@ namespace Database
 
                 if (table == null)
                 {
-                    MessageBox.Show($"Table definition for '{tableName}' not found in {clientVersion}.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show($"Table definition for '{tableName}' not found in {clientVersion}.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                     dbc_editor?.warnings_text_box.AppendText($"Table definition for '{tableName}' not found in {clientVersion}.\n");
-                    dataGridView.DataSource = dbc_data;
+                    dataGridView.ItemsSource = dbc_data.DefaultView;
                     return;
                 }
 
@@ -874,13 +757,13 @@ namespace Database
 
                 if (fields.Count == 0)
                 {
-                    MessageBox.Show($"No fields found for table '{tableName}'.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show($"No fields found for table '{tableName}'.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                     dbc_editor?.warnings_text_box.AppendText($"No fields found for table '{tableName}' in {clientVersion}.\n");
-                    dataGridView.DataSource = dbc_data;
+                    dataGridView.ItemsSource = dbc_data.DefaultView;
                     return;
                 }
 
-                // Create DataGridViewTextBoxColumns with proper headers
+                // Create DataGridTextColumns with proper headers
                 // Process each field and expand array fields into indexed columns
                 int fieldIndex = 0;
                 foreach (var fieldElement in fields)
@@ -897,26 +780,16 @@ namespace Database
                         arraySize = size;
                     }
 
-                    // Check IsIndex attribute for potential future use
-                    bool isIndex = false;
-                    var isIndexAttr = fieldElement.Attribute("IsIndex");
-                    if (isIndexAttr != null && bool.TryParse(isIndexAttr.Value, out bool idx))
-                    {
-                        isIndex = idx;
-                    }
-
                     // Create columns for this field (1 if no array, or N if array)
                     for (int i = 1; i <= arraySize; i++)
                     {
                         // Create display name with array index if ArraySize > 1
                         string displayName = arraySize > 1 ? $"{fieldName}_{i}" : fieldName;
 
-                        var column = new DataGridViewTextBoxColumn
+                        var column = new DataGridTextColumn
                         {
-                            Name = displayName,
-                            HeaderText = displayName,
-                            DataPropertyName = $"Field{fieldIndex}",
-                            Tag = isIndex ? "Index" : null
+                            Header = displayName,
+                            Binding = new System.Windows.Data.Binding($"[Field{fieldIndex}]")
                         };
                         dataGridView.Columns.Add(column);
                         fieldIndex++;
@@ -924,46 +797,27 @@ namespace Database
                 }
 
                 // Now bind the data - columns are already set up
-                dataGridView.DataSource = dbc_data;
-                dataGridView.AutoResizeColumns();
-                dataGridView.AutoResizeRows();
+                dataGridView.ItemsSource = dbc_data.DefaultView;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading definitions: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error loading definitions: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText($"Error loading definitions for {clientVersion}: {ex.Message}\n");
-                dataGridView.DataSource = dbc_data;
+                dataGridView.ItemsSource = dbc_data.DefaultView;
             }
         }
 
-        private void ApplyFilterToTable(TabPage tabPage, DataGridView dataGridView, string filter, string dataColumnName = "")
+        private void ApplyFilterToTable(TabItem tabPage, DataGrid dataGridView, string filter, string dataColumnName = "")
         {
             if (tabPage == null || dataGridView == null || string.IsNullOrEmpty(filter))
                 return;
 
             try
             {
-                // Store the current column definitions before changing the data source
-                var currentColumns = new List<(string Name, string HeaderText, Type DataType)>();
-                foreach (DataGridViewColumn col in dataGridView.Columns)
+                DataView? view = GetBackingView(dataGridView);
+                if (view?.Table == null)
                 {
-                    currentColumns.Add((col.Name, col.HeaderText, col.ValueType ?? typeof(object)));
-                }
-
-                // Get the underlying DataTable (handle both DataTable and BindingSource sources)
-                DataTable? sourceTable = null;
-                if (dataGridView.DataSource is DataTable dt)
-                {
-                    sourceTable = dt;
-                }
-                else if (dataGridView.DataSource is BindingSource bs && bs.DataSource is DataTable bsdt)
-                {
-                    sourceTable = bsdt;
-                }
-
-                if (sourceTable == null)
-                {
-                    MessageBox.Show("Unable to access the underlying data source.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Unable to access the underlying data source.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
@@ -973,45 +827,29 @@ namespace Database
                 {
                     // Find the first word (column name) in the filter and replace it with dataColumnName
                     // This handles cases like "TabID LIKE '%value%'" -> "Field0 LIKE '%value%'"
-                    foreach (DataGridViewColumn col in dataGridView.Columns)
+                    foreach (DataGridColumn col in dataGridView.Columns)
                     {
-                        if (col.HeaderText == dataColumnName && col.DataPropertyName != col.HeaderText)
+                        string? header = col.Header?.ToString();
+                        string? boundName = (col as DataGridTextColumn)?.Binding is System.Windows.Data.Binding b ? b.Path.Path.Trim('[', ']') : null;
+                        if (header == dataColumnName && boundName != null && boundName != header)
                         {
-                            actualFilter = filter.Replace(dataColumnName, col.DataPropertyName);
+                            actualFilter = filter.Replace(dataColumnName, boundName);
                             break;
                         }
                     }
                 }
 
-                // Apply the filter to the DataGridView
-                BindingSource bindingSource = new BindingSource();
-                bindingSource.DataSource = sourceTable;
-                bindingSource.Filter = actualFilter;
-
-                // Save current columns before changing data source
-                var savedColumns = currentColumns.ToList();
-
-                dataGridView.DataSource = bindingSource;
-
-                // Restore the column definitions
-                if (savedColumns.Count > 0 && savedColumns.Count <= dataGridView.Columns.Count)
-                {
-                    for (int i = 0; i < savedColumns.Count; i++)
-                    {
-                        if (i < dataGridView.Columns.Count)
-                        {
-                            dataGridView.Columns[i].HeaderText = savedColumns[i].HeaderText;
-                            dataGridView.Columns[i].Name = savedColumns[i].Name;
-                        }
-                    }
-                }
+                // Apply the filter directly on the DataView backing the grid - WPF's DataGrid
+                // re-renders live off the same DataView, so no data-source swap/restore is needed
+                // the way a WinForms BindingSource required.
+                view.RowFilter = actualFilter;
 
                 dbc_editor?.messages_text_box.AppendText($"Filter applied: {filter}\n");
-                dbc_editor?.message_text.Text = $"Filter applied successfully. ({bindingSource.Count} row(s) match)";
+                if (dbc_editor != null) dbc_editor.message_text.Text = $"Filter applied successfully. ({view.Count} row(s) match)";
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error applying filter: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error applying filter: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText($"Error applying filter: {ex.Message}\n");
             }
         }
@@ -1021,36 +859,35 @@ namespace Database
             try
             {
                 // Get the currently active tab
-                if (dbc_editor?.dbc_tab_control?.SelectedTab == null)
+                if (dbc_editor?.dbc_tab_control?.SelectedItem is not TabItem selectedTab)
                 {
-                    MessageBox.Show("No DBC file is currently loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No DBC file is currently loaded.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
-                // Get the DataGridView from the active tab
-                DataGridView? dataGridView = dbc_editor.dbc_tab_control.SelectedTab.Controls[0] as DataGridView;
-                if (dataGridView == null)
+                // Get the DataGrid from the active tab
+                DataGrid? dataGridView = selectedTab.Content as DataGrid;
+                DataView? view = dataGridView != null ? GetBackingView(dataGridView) : null;
+                if (dataGridView == null || view == null)
                 {
-                    MessageBox.Show("DataGridView not found in the active tab.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("DataGridView not found in the active tab.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
-                // Get the underlying data source before the filter was applied
-                if (dataGridView.DataSource is BindingSource bindingSource)
+                if (!string.IsNullOrEmpty(view.RowFilter))
                 {
-                    // Restore the original data source
-                    dataGridView.DataSource = bindingSource.DataSource;
+                    view.RowFilter = string.Empty;
                     dbc_editor?.messages_text_box.AppendText("Filter cleared. Showing all rows.\n");
-                    dbc_editor?.message_text.Text = "Filter cleared.";
+                    if (dbc_editor != null) dbc_editor.message_text.Text = "Filter cleared.";
                 }
                 else
                 {
-                    MessageBox.Show("No filter is currently applied.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("No filter is currently applied.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error clearing filter: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error clearing filter: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText($"Error clearing filter: {ex.Message}\n");
             }
         }
@@ -1058,46 +895,43 @@ namespace Database
         public void CreateNewFilter()
         {
             // Get the currently active tab
-            if (dbc_editor?.dbc_tab_control?.SelectedTab == null)
+            if (dbc_editor?.dbc_tab_control?.SelectedItem is not TabItem selectedTab)
             {
-                MessageBox.Show("No DBC file is currently loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No DBC file is currently loaded.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText("Create Filter failed: No DBC file is currently loaded.\n");
                 return;
             }
 
-            // Get the DataGridView from the active tab
-            DataGridView? dataGridView = dbc_editor.dbc_tab_control.SelectedTab.Controls[0] as DataGridView;
+            // Get the DataGrid from the active tab
+            DataGrid? dataGridView = selectedTab.Content as DataGrid;
             if (dataGridView == null)
             {
-                MessageBox.Show("DataGridView not found in the active tab.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("DataGridView not found in the active tab.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText("Create Filter failed: DataGridView not found in the active tab.\n");
                 return;
             }
 
-            // Extract column names and their data property names from the DataGridView columns
+            // Extract column names and their data property names from the DataGrid columns
             var columnMappings = new List<(string DisplayName, string DataPropertyName)>();
-            foreach (DataGridViewColumn col in dataGridView.Columns)
+            foreach (DataGridColumn col in dataGridView.Columns)
             {
-                string dataPropertyName = col.DataPropertyName;
-                if (string.IsNullOrEmpty(dataPropertyName))
-                {
-                    dataPropertyName = col.Name;
-                }
-                columnMappings.Add((col.HeaderText, dataPropertyName));
+                string? header = col.Header?.ToString() ?? string.Empty;
+                string dataPropertyName = (col as DataGridTextColumn)?.Binding is System.Windows.Data.Binding b ? b.Path.Path.Trim('[', ']') : header ?? string.Empty;
+                columnMappings.Add((header ?? string.Empty, dataPropertyName));
             }
 
             if (columnMappings.Count == 0)
             {
-                MessageBox.Show("No columns found in the current table.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No columns found in the current table.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 dbc_editor?.errors_text_box.AppendText("Create Filter failed: No columns found in the current table.\n");
                 return;
             }
 
             // Pass the column mappings to FilterForm so it builds the filter using actual column names
             var filterForm = new FilterForm(columnMappings);
-            if (filterForm.ShowDialog() == DialogResult.OK)
+            if (filterForm.ShowDialog() == true)
             {
-                ApplyFilterToTable(dbc_editor.dbc_tab_control.SelectedTab, dataGridView, filterForm.FilterExpression);
+                ApplyFilterToTable(selectedTab, dataGridView, filterForm.FilterExpression);
             }
         }
     }
@@ -1185,13 +1019,11 @@ namespace Database
         }
     }
 
-    public class FilterForm : Form
+    public class FilterForm : Window
     {
         private ComboBox? columnComboBox;
         private ComboBox? operatorComboBox;
         private TextBox? valueTextBox;
-        private Button? okButton;
-        private Button? cancelButton;
         private List<(string DisplayName, string DataPropertyName)> columnMappings;
         private string[] displayNames;
 
@@ -1207,125 +1039,87 @@ namespace Database
 
         private void InitializeFormComponents()
         {
-            this.Text = "Create Filter";
+            this.Title = "Create Filter";
             this.Width = 450;
             this.Height = 200;
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
+            this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            this.ResizeMode = ResizeMode.NoResize;
+
+            var grid = new Grid();
 
             // Column Label and ComboBox
-            var columnLabel = new Label
-            {
-                Text = "Column:",
-                Left = 10,
-                Top = 10,
-                Width = 60
-            };
+            var columnLabel = new Label { Content = "Column:", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(10, 10, 0, 0), Width = 60 };
 
             columnComboBox = new ComboBox
             {
-                Left = 80,
-                Top = 10,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(80, 10, 0, 0),
                 Width = 350,
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                DataSource = displayNames
+                ItemsSource = displayNames
             };
 
             // Operator Label and ComboBox
-            var operatorLabel = new Label
-            {
-                Text = "Operator:",
-                Left = 10,
-                Top = 45,
-                Width = 60
-            };
+            var operatorLabel = new Label { Content = "Operator:", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(10, 45, 0, 0), Width = 60 };
 
             operatorComboBox = new ComboBox
             {
-                Left = 80,
-                Top = 45,
-                Width = 350,
-                DropDownStyle = ComboBoxStyle.DropDownList
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(80, 45, 0, 0),
+                Width = 350
             };
 
-            operatorComboBox.Items.AddRange(new object[]
-            {
-                "Equals",
-                "Does Not Equal",
-                "Contains",
-                "Does Not Contain",
-                "Starts With",
-                "Ends With",
-                "Greater Than",
-                "Less Than",
-                "Greater Than Or Equal",
-                "Less Than Or Equal",
-                "Is Null",
-                "Is Not Null"
-            });
+            operatorComboBox.Items.Add("Equals");
+            operatorComboBox.Items.Add("Does Not Equal");
+            operatorComboBox.Items.Add("Contains");
+            operatorComboBox.Items.Add("Does Not Contain");
+            operatorComboBox.Items.Add("Starts With");
+            operatorComboBox.Items.Add("Ends With");
+            operatorComboBox.Items.Add("Greater Than");
+            operatorComboBox.Items.Add("Less Than");
+            operatorComboBox.Items.Add("Greater Than Or Equal");
+            operatorComboBox.Items.Add("Less Than Or Equal");
+            operatorComboBox.Items.Add("Is Null");
+            operatorComboBox.Items.Add("Is Not Null");
 
             operatorComboBox.SelectedIndex = 0;
 
             // Value Label and TextBox
-            var valueLabel = new Label
-            {
-                Text = "Value:",
-                Left = 10,
-                Top = 80,
-                Width = 60
-            };
+            var valueLabel = new Label { Content = "Value:", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(10, 80, 0, 0), Width = 60 };
 
             valueTextBox = new TextBox
             {
-                Left = 80,
-                Top = 80,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(80, 80, 0, 0),
                 Width = 350
             };
 
             // Buttons
-            okButton = new Button
-            {
-                Text = "OK",
-                Left = 250,
-                Top = 120,
-                Width = 80,
-                Height = 30,
-                DialogResult = DialogResult.OK
-            };
-
-            cancelButton = new Button
-            {
-                Text = "Cancel",
-                Left = 340,
-                Top = 120,
-                Width = 80,
-                Height = 30,
-                DialogResult = DialogResult.Cancel
-            };
+            var okButton = new Button { Content = "OK", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(250, 120, 0, 0), Width = 80, Height = 30 };
+            var cancelButton = new Button { Content = "Cancel", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(340, 120, 0, 0), Width = 80, Height = 30, IsCancel = true };
 
             okButton.Click += OkButton_Click;
+            cancelButton.Click += (s, e) => { this.DialogResult = false; this.Close(); };
 
-            // Add controls to form
-            this.Controls.Add(columnLabel);
-            this.Controls.Add(columnComboBox);
-            this.Controls.Add(operatorLabel);
-            this.Controls.Add(operatorComboBox);
-            this.Controls.Add(valueLabel);
-            this.Controls.Add(valueTextBox);
-            this.Controls.Add(okButton);
-            this.Controls.Add(cancelButton);
+            grid.Children.Add(columnLabel);
+            grid.Children.Add(columnComboBox);
+            grid.Children.Add(operatorLabel);
+            grid.Children.Add(operatorComboBox);
+            grid.Children.Add(valueLabel);
+            grid.Children.Add(valueTextBox);
+            grid.Children.Add(okButton);
+            grid.Children.Add(cancelButton);
 
-            this.AcceptButton = okButton;
-            this.CancelButton = cancelButton;
+            this.Content = grid;
         }
 
-        private void OkButton_Click(object? sender, EventArgs e)
+        private void OkButton_Click(object? sender, RoutedEventArgs e)
         {
             if (columnComboBox?.SelectedItem == null)
             {
-                MessageBox.Show("Please select a column.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select a column.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -1349,12 +1143,12 @@ namespace Database
 
             if (string.IsNullOrEmpty(FilterExpression))
             {
-                MessageBox.Show("Unable to build filter expression.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.DialogResult = DialogResult.None;
+                MessageBox.Show("Unable to build filter expression.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                this.DialogResult = null;
                 return;
             }
 
-            this.DialogResult = DialogResult.OK;
+            this.DialogResult = true;
             this.Close();
         }
 

@@ -1,14 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
+using System.Windows;
 using System.Xml.Linq;
 using System.IO;
 using static Logic.Globals;
 
 namespace AzureEditor
 {
-    public partial class AppDelete : Form
+    public partial class AppDelete : Window
     {
         public AppDelete()
         {
@@ -22,39 +21,30 @@ namespace AzureEditor
             }
         }
 
-        private void select_all_Click(object sender, EventArgs e)
+        private void select_all_Click(object sender, RoutedEventArgs e)
         {
             if (connection_deletion_selection.Items.Count > 0)
             {
                 foreach (LoginTable login_cred in login_list)
                 {
-                    if (!string.IsNullOrEmpty(login_cred.Nickname))
+                    if (!string.IsNullOrEmpty(login_cred.Nickname) && connection_deletion_selection.Items.Contains(login_cred.Nickname))
                     {
-                        int index = connection_deletion_selection.Items.IndexOf(login_cred.Nickname);
-                        if (index >= 0)
-                            connection_deletion_selection.SetSelected(index, true);
+                        if (!connection_deletion_selection.SelectedItems.Contains(login_cred.Nickname))
+                            connection_deletion_selection.SelectedItems.Add(login_cred.Nickname);
                     }
                 }
             }
-            else 
+            else
             {
                 MessageBox.Show("No connections in the list to be selected!");
             }
         }
 
-        private void deselect_all_Click(object sender, EventArgs e)
+        private void deselect_all_Click(object sender, RoutedEventArgs e)
         {
             if (connection_deletion_selection.Items.Count > 0)
             {
-                foreach (LoginTable login_cred in login_list)
-                {
-                    if (!string.IsNullOrEmpty(login_cred.Nickname))
-                    {
-                        int index = connection_deletion_selection.Items.IndexOf(login_cred.Nickname);
-                        if (index >= 0)
-                            connection_deletion_selection.SetSelected(index, false);
-                    }
-                }
+                connection_deletion_selection.SelectedItems.Clear();
             }
             else
             {
@@ -62,7 +52,7 @@ namespace AzureEditor
             }
         }
 
-        private void delete_selected_Click(object sender, EventArgs e)
+        private void delete_selected_Click(object sender, RoutedEventArgs e)
         {
             int remove_counter = 0;
 
@@ -85,9 +75,7 @@ namespace AzureEditor
                     if (!string.IsNullOrEmpty(login_cred.Nickname) && connection_deletion_selection.SelectedItems.Contains(login_cred.Nickname))
                     {
                         // Remove from ListBox
-                        int index = connection_deletion_selection.Items.IndexOf(login_cred.Nickname);
-                        if (index >= 0)
-                            connection_deletion_selection.Items.RemoveAt(index);
+                        connection_deletion_selection.Items.Remove(login_cred.Nickname);
 
                         // Remove from the global list
                         login_list.Remove(login_cred);
@@ -110,7 +98,7 @@ namespace AzureEditor
             MessageBox.Show($"Removed {remove_counter} connection(s) successfully!");
         }
 
-        private void delete_all_Click(object sender, EventArgs e)
+        private void delete_all_Click(object sender, RoutedEventArgs e)
         {
             if (login_list.Count == 0)
             {
@@ -148,11 +136,11 @@ namespace AzureEditor
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error updating configuration file:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error updating configuration file:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void confirm_button_Click(object sender, EventArgs e)
+        private void confirm_button_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
