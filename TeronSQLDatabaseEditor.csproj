@@ -98,4 +98,24 @@
 	<Content Include="Resources\Definitions\*.*" CopyToOutputDirectory="PreserveNewest" />
 	<Content Include="Resources\Icons\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!--
+    Directory.Build.props relocates obj\ under Build\obj\$(MSBuildProjectName)\, but the implicit
+    item globs (**/*.cs etc.) don't reliably exclude a STALE sibling Configuration/Platform folder
+    left there from an earlier build - its generated .g.cs files then get swept in as duplicate
+    source against the current build's own copy (CS0102/CS0111/CS8646). This project's own Compile
+    items are already explicit (EnableDefaultCompileItems is false above, so nothing under Build\
+    was ever going to be swept via *that* glob) - this ItemGroup is defense-in-depth for the other
+    implicit item types (Page/Resource/None/etc.) that are still on their SDK defaults here. See
+    the portfolio-wide write-up in project memory (builder_stale_obj_glob_pollution) for the full
+    mechanism and how this was found/verified in the sibling apps that don't disable Compile globbing.
+  -->
+  <ItemGroup>
+    <Compile Remove="Build\**" />
+    <EmbeddedResource Remove="Build\**" />
+    <None Remove="Build\**" />
+    <Page Remove="Build\**" />
+    <ApplicationDefinition Remove="Build\**" />
+    <Resource Remove="Build\**" />
+  </ItemGroup>
 </Project>
